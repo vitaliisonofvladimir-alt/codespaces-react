@@ -5,7 +5,20 @@ describe('createChatCompletion', () => {
   it('sends the user message to the OpenAI Responses API and returns output text', async () => {
     const fetchImpl = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ output_text: 'Hello from OpenAI' }),
+      json: async () => ({
+        output: [
+          {
+            type: 'message',
+            role: 'assistant',
+            content: [
+              {
+                type: 'output_text',
+                text: 'Hello from OpenAI',
+              },
+            ],
+          },
+        ],
+      }),
     });
 
     const result = await createChatCompletion('Hello', {
