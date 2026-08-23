@@ -6,7 +6,13 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function sendMessage() {
+  async function sendMessage(event) {
+    event.preventDefault();
+
+    const text = message.trim();
+    if (!text) return;
+
+    setMessage('');
     setLoading(true);
     setError('');
 
@@ -16,7 +22,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message: text }),
       });
 
       const data = await response.json();
@@ -37,15 +43,17 @@ function App() {
     <div className="App">
       <h1>codespaces-react + OpenAI</h1>
 
-      <input
-        value={message}
-        onChange={(event) => setMessage(event.target.value)}
-        placeholder="Введите сообщение"
-      />
+      <form onSubmit={sendMessage}>
+        <input
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder="Введите сообщение"
+        />
 
-      <button onClick={sendMessage} disabled={loading}>
-        {loading ? 'Отправка...' : 'Отправить'}
-      </button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Отправка...' : 'Отправить'}
+        </button>
+      </form>
 
       {reply && <p>{reply}</p>}
       {error && <p>{error}</p>}
