@@ -1,25 +1,54 @@
+import { useState } from 'react';
+
 function App() {
+  const [message, setMessage] = useState('');
+  const [reply, setReply] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function sendMessage() {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Request failed');
+      }
+
+      setReply(data.reply);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src="Octocat.png" className="App-logo" alt="logo" />
-        <p>
-          GitHub Codespaces <span className="heart">♥️</span> React
-        </p>
-        <p className="small">
-          Edit <code>src/App.jsx</code> and save to reload.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </p>
-      </header>
+      <h1>codespaces-react + OpenAI</h1>
+
+      <input
+        value={message}
+        onChange={(event) => setMessage(event.target.value)}
+        placeholder="Введите сообщение"
+      />
+
+      <button onClick={sendMessage} disabled={loading}>
+        {loading ? 'Отправка...' : 'Отправить'}
+      </button>
+
+      {reply && <p>{reply}</p>}
+      {error && <p>{error}</p>}
     </div>
   );
 }
