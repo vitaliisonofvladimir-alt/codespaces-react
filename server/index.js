@@ -2,23 +2,6 @@ import { runAssistant } from './agents/assistant.js';
 import { createServer } from 'node:http';
 import { createChatCompletion } from './openai.js';
 
-if (
-  request.method !== 'POST' ||
-  !['/api/chat', '/api/agent'].includes(request.url)
-) {
-  sendJson(response, 404, { error: 'Not found' });
-  return;
-}
-
-const { message } = await readJson(request);
-
-const reply =
-  request.url === '/api/agent'
-    ? await runAssistant(message)
-    : await createChatCompletion(message);
-
-sendJson(response, 200, { reply });
-
 const PORT = Number(process.env.API_PORT || 8787);
 
 function sendJson(response, statusCode, body) {
@@ -33,6 +16,7 @@ async function readJson(request) {
 
   for await (const chunk of request) {
     raw += chunk;
+
     if (raw.length > 1_000_000) {
       throw new Error('Request body is too large');
     }
@@ -52,20 +36,35 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (request.method !== 'POST' || request.url !== '/api/chat') {
+  if (
+    request.method !== 'POST' ||
+    !['/api/chat', '/api/agent'].includes(request.url)
+  ) {
     sendJson(response, 404, { error: 'Not found' });
     return;
   }
 
-  response.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+  response.setHeader(
+    'Access-Control-Allow-Origin',
+    'http://localhost:3000'
+  );
 
   try {
     const { message } = await readJson(request);
-    const reply = await createChatCompletion(message);
+
+    const reply =
+      request.url === '/api/agent'
+        ? await runAssistant(message)
+        : await createChatCompletion(message);
+
     sendJson(response, 200, { reply });
   } catch (error) {
-    const statusCode = error.message === 'Message is required' ? 400 : 500;
-    sendJson(response, statusCode, { error: error.message });
+    const statusCode =
+      error.message === 'Message is required' ? 400 : 500;
+
+    sendJson(response, statusCode, {
+      error: error.message,
+    });
   }
 });
 

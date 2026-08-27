@@ -7,13 +7,17 @@ describe("assistantAgent", () => {
     expect(assistantAgent.instructions).toContain("helpful assistant");
   });
 
+  test("registers current time tool", () => {
+    expect(assistantAgent.tools).toHaveLength(1);
+  });
+
   test("runs assistant with mocked runner", async () => {
     const fakeRunner = async (agent, message) => {
       expect(agent).toBe(assistantAgent);
       expect(message).toBe("Hello");
 
       return {
-        finalOutput: "Mock response",
+        finalOutput: "Mock reply",
       };
     };
 
@@ -21,6 +25,6 @@ describe("assistantAgent", () => {
       runner: fakeRunner,
     });
 
-    expect(result).toBe("Mock response");
+    expect(result).toBe("Mock reply");
   });
 });
