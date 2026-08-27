@@ -1,5 +1,23 @@
+import { runAssistant } from './agents/assistant.js';
 import { createServer } from 'node:http';
 import { createChatCompletion } from './openai.js';
+
+if (
+  request.method !== 'POST' ||
+  !['/api/chat', '/api/agent'].includes(request.url)
+) {
+  sendJson(response, 404, { error: 'Not found' });
+  return;
+}
+
+const { message } = await readJson(request);
+
+const reply =
+  request.url === '/api/agent'
+    ? await runAssistant(message)
+    : await createChatCompletion(message);
+
+sendJson(response, 200, { reply });
 
 const PORT = Number(process.env.API_PORT || 8787);
 
