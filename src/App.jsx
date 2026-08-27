@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import ChatInput from './components/ChatInput';
 import ChatModeSelector from './components/ChatModeSelector';
-import ChatReply from './components/ChatReply';
 import { sendChatMessage } from './api/chat';
+import ChatMessages from './components/ChatMessages';
 
 function App() {
   const [message, setMessage] = useState('');
-  const [reply, setReply] = useState('');
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mode, setMode] = useState('chat');
@@ -18,12 +18,29 @@ function App() {
     if (!text) return;
 
     setMessage('');
+
+    setMessages((prev) => [
+  ...prev,
+  {
+    role: 'user',
+    content: text,
+  },
+]);
+
     setLoading(true);
     setError('');
 
     try {
       const response = await sendChatMessage(mode, text);
-      setReply(response);
+   
+    setMessages((prev) => [
+  ...prev,
+  {
+    role: 'assistant',
+    content: response,
+  },
+]);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -49,10 +66,9 @@ function App() {
         loading={loading}
       />
 
-      <ChatReply
-        reply={reply}
-        error={error}
-      />
+      <ChatMessages messages={messages} />
+
+      {error && <p>{error}</p>}     
     </div>
   );
 }
