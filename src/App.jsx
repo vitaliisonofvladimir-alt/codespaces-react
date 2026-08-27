@@ -5,6 +5,7 @@ function App() {
   const [reply, setReply] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mode, setMode] = useState('chat');
 
   async function sendMessage(event) {
     event.preventDefault();
@@ -17,7 +18,12 @@ function App() {
     setError('');
 
     try {
-      const response = await fetch('/api/chat', {
+      const endpoint =
+        mode === 'agent'
+          ? '/api/agent'
+          : '/api/chat';
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,6 +48,26 @@ function App() {
   return (
     <div className="App">
       <h1>codespaces-react + OpenAI</h1>
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setMode('chat')}
+          disabled={mode === 'chat'}
+        >
+          Chat
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMode('agent')}
+          disabled={mode === 'agent'}
+        >
+          Agent
+        </button>
+      </div>
+
+      <p>Режим: {mode}</p>
 
       <form onSubmit={sendMessage}>
         <input
