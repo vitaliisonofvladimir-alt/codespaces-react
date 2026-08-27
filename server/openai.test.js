@@ -40,7 +40,7 @@ describe('createChatCompletion', () => {
 
     const request = fetchImpl.mock.calls[0][1];
     expect(JSON.parse(request.body)).toEqual({
-      model: 'gpt-5.6-luna',
+      model: 'gpt-5-mini',
       input: 'Hello',
     });
   });
