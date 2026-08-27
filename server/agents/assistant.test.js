@@ -11,7 +11,9 @@ describe("assistantAgent", () => {
     const fakeRunner = async (agent, message) => {
       expect(agent).toBe(assistantAgent);
       expect(message).toBe("Hello");
-
+  test("registers current time tool", () => {
+    expect(assistantAgent.tools).toHaveLength(1);
+  });
       return {
         finalOutput: "Mock response",
       };
