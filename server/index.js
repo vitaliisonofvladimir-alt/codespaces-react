@@ -1,8 +1,10 @@
 import { runAssistant } from './agents/assistant.js';
 import { createServer } from 'node:http';
 import { createChatCompletion } from './openai.js';
+import { getAllowedOrigin } from './cors.js';
 
 const PORT = Number(process.env.API_PORT || 8787);
+const ALLOWED_ORIGIN = getAllowedOrigin();
 
 function sendJson(response, statusCode, body) {
   response.writeHead(statusCode, {
@@ -28,7 +30,7 @@ async function readJson(request) {
 const server = createServer(async (request, response) => {
   if (request.method === 'OPTIONS') {
     response.writeHead(204, {
-      'Access-Control-Allow-Origin': 'http://localhost:3000',
+      'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
       'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
     });
@@ -44,10 +46,7 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  response.setHeader(
-    'Access-Control-Allow-Origin',
-    'http://localhost:3000'
-  );
+  response.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
 
   try {
     const { message } = await readJson(request);
