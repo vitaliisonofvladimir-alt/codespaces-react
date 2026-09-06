@@ -67,6 +67,6 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, "127.0.0.1", () => {
   console.log(`OpenAI API server listening on http://localhost:${PORT}`);
 });

@@ -41,6 +41,7 @@ describe('createChatCompletion', () => {
     const request = fetchImpl.mock.calls[0][1];
     expect(JSON.parse(request.body)).toEqual({
       model: 'gpt-5-mini',
+      tools: [{ type: 'web_search' }],
       input: 'Hello',
     });
   });
@@ -55,3 +56,29 @@ describe('createChatCompletion', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 });
+
+  it('enables web search for current information', async () => {
+    let requestBody;
+
+    const fetchImpl = async (_url, options) => {
+      requestBody = JSON.parse(options.body);
+
+      return {
+        ok: true,
+        json: async () => ({
+          output_text: 'Current information',
+        }),
+      };
+    };
+
+    const result = await createChatCompletion(
+      'What is happening today?',
+      {
+        apiKey: 'test-key',
+        fetchImpl,
+      }
+    );
+
+    expect(result).toBe('Current information');
+    expect(requestBody.tools).toEqual([{ type: 'web_search' }]);
+  });

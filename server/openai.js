@@ -34,6 +34,7 @@ export async function createChatCompletion(
     },
     body: JSON.stringify({
       model: DEFAULT_MODEL,
+      tools: [{ type: 'web_search' }],
       input: message.trim(),
     }),
   });
