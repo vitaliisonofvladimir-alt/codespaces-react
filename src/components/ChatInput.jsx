@@ -3,6 +3,7 @@ export default function ChatInput({
   setMessage,
   onSubmit,
   loading,
+  onStartRecording,
 }) {
   return (
     <form onSubmit={onSubmit}>
@@ -11,6 +12,15 @@ export default function ChatInput({
         onChange={(event) => setMessage(event.target.value)}
         placeholder="Введите сообщение"
       />
+
+      <button
+        type="button"
+        aria-label="Микрофон"
+        onClick={onStartRecording}
+        disabled={loading}
+      >
+        🎤
+      </button>
 
       <button type="submit" disabled={loading}>
         {loading ? 'Отправка...' : 'Отправить'}
