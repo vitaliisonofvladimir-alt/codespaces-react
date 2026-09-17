@@ -117,3 +117,72 @@ test('passes recorded audio to the transcription callback when recording stops',
 
   expect(onAudioReady).toHaveBeenCalledWith(audioBlob);
 });
+
+test('transcribes recorded audio into the message input', async () => {
+  const mediaRecorder = {
+    start: vi.fn(),
+    stop: vi.fn(),
+    ondataavailable: null,
+    onstop: null,
+    mimeType: 'audio/webm',
+  };
+
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+    ok: true,
+    status: 200,
+    text: async () => JSON.stringify({
+      text: 'Распознанный текст',
+    }),
+  });
+
+  Object.defineProperty(globalThis.navigator, 'mediaDevices', {
+    configurable: true,
+    value: {
+      getUserMedia: vi.fn().mockResolvedValue({
+        getTracks: () => [],
+      }),
+    },
+  });
+
+  globalThis.MediaRecorder = class {
+    constructor() {
+      return mediaRecorder;
+    }
+  };
+
+  render(<App />);
+
+  fireEvent.click(
+    screen.getByRole('button', { name: /микрофон/i })
+  );
+
+  await waitFor(() => {
+    expect(mediaRecorder.start).toHaveBeenCalledTimes(1);
+  });
+
+  fireEvent.click(
+    screen.getByRole('button', { name: /микрофон/i })
+  );
+
+  mediaRecorder.ondataavailable({
+    data: new Blob(['audio'], { type: 'audio/webm' }),
+  });
+
+  await mediaRecorder.onstop();
+
+  await waitFor(() => {
+    expect(screen.getByRole('textbox').value)
+      .toBe('Распознанный текст');
+  });
+
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/api/transcribe',
+    expect.objectContaining({
+      method: 'POST',
+      headers: { 'Content-Type': 'audio/webm' },
+      body: expect.any(Blob),
+    })
+  );
+
+  fetchMock.mockRestore();
+});
