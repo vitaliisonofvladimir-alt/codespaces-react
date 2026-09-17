@@ -5,7 +5,8 @@ import App from './App';
 test('sends a message to the API and renders the reply', async () => {
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
     ok: true,
-    json: async () => ({ reply: 'Да, работает.' }),
+    status: 200,
+    text: async () => JSON.stringify({ reply: 'Да, работает.' }),
   });
 
   render(<App />);
