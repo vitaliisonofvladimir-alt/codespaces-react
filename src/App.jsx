@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import ChatInput from './components/ChatInput';
 import ChatModeSelector from './components/ChatModeSelector';
 import { sendChatMessage } from './api/chat';
+import { transcribeRecording } from './api/transcription';
 import ChatMessages from './components/ChatMessages';
 
 function App({ onAudioReady }) {
@@ -37,13 +38,23 @@ function App({ onAudioReady }) {
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, {
           type: mediaRecorder.mimeType || 'audio/webm',
         });
 
         if (audioBlob.size > 0) {
-          onAudioReady?.(audioBlob);
+          if (onAudioReady) {
+            onAudioReady(audioBlob);
+          } else {
+            try {
+              const transcript = await transcribeRecording(audioBlob);
+              setMessage(transcript);
+              setError('');
+            } catch (err) {
+              setError(err.message);
+            }
+          }
         }
 
         audioChunksRef.current = [];
