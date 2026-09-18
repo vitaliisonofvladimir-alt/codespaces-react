@@ -2,6 +2,28 @@ import { expect, test, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 
+test('renders the focused NVVAI welcome screen before the first message', () => {
+  render(<App />);
+
+  expect(screen.getByRole('heading', { name: /чем я могу помочь/i }))
+    .toBeDefined();
+  expect(screen.getByText('NVVAI')).toBeDefined();
+  expect(screen.getByRole('button', { name: /объясни сложную тему/i }))
+    .toBeDefined();
+  expect(screen.queryByRole('log')).toBeNull();
+});
+
+test('fills the prompt when an example is selected', () => {
+  render(<App />);
+
+  fireEvent.click(
+    screen.getByRole('button', { name: /объясни сложную тему/i })
+  );
+
+  expect(screen.getByRole('textbox').value)
+    .toBe('Объясни сложную тему простыми словами');
+});
+
 test('sends a message to the API and renders the reply', async () => {
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
     ok: true,
@@ -15,6 +37,10 @@ test('sends a message to the API and renders the reply', async () => {
     target: { value: 'Привет!' },
   });
   fireEvent.click(screen.getByRole('button', { name: /отправить/i }));
+
+  expect(screen.queryByRole('heading', { name: /чем я могу помочь/i }))
+    .toBeNull();
+  expect(screen.getByRole('log')).toBeDefined();
 
   await waitFor(() => {
     expect(screen.getByText('Да, работает.')).toBeDefined();
@@ -106,7 +132,7 @@ test('passes recorded audio to the transcription callback when recording stops',
   });
 
   fireEvent.click(
-    screen.getByRole('button', { name: /микрофон/i })
+    screen.getByRole('button', { name: /остановить запись/i })
   );
 
   mediaRecorder.ondataavailable({
@@ -161,7 +187,7 @@ test('transcribes recorded audio into the message input', async () => {
   });
 
   fireEvent.click(
-    screen.getByRole('button', { name: /микрофон/i })
+    screen.getByRole('button', { name: /остановить запись/i })
   );
 
   mediaRecorder.ondataavailable({
