@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 
 test('renders the focused NVVAI welcome screen before the first message', () => {
+  window.location.hash = '';
   render(<App />);
 
   expect(screen.getByRole('heading', { name: /чем я могу помочь/i }))
@@ -13,7 +14,42 @@ test('renders the focused NVVAI welcome screen before the first message', () => 
   expect(screen.queryByRole('log')).toBeNull();
 });
 
+test('navigates to the Leads workspace from the main navigation', async () => {
+  window.location.hash = '';
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => ({ leads: [] }),
+  });
+
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: 'Лиды' }));
+
+  expect(window.location.hash).toBe('#leads');
+  expect(await screen.findByRole('heading', { name: 'Лиды' })).toBeDefined();
+  expect(fetchMock).toHaveBeenCalledWith(
+    '/v1/leads',
+    expect.objectContaining({ headers: { accept: 'application/json' } })
+  );
+  fetchMock.mockRestore();
+});
+
+test('supports selecting Agent mode in the chat workspace', () => {
+  window.location.hash = '';
+  render(<App />);
+
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: 'Show mode controls' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Отправить' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Agent' }));
+
+  expect(screen.getByText(/Mode:/)).toBeDefined();
+  expect(screen.getByRole('button', { name: 'Agent' }).disabled).toBe(true);
+});
+
 test('fills the prompt when an example is selected', () => {
+  window.location.hash = '';
   render(<App />);
 
   fireEvent.click(
