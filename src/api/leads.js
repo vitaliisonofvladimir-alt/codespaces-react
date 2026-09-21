@@ -32,6 +32,7 @@ async function request(path = '', options = {}) {
   try {
     response = await fetch(buildUrl(path), {
       ...options,
+      credentials: 'include',
       headers: {
         accept: 'application/json',
         ...(options.body ? { 'content-type': 'application/json' } : {}),
@@ -59,6 +60,7 @@ async function request(path = '', options = {}) {
   if (!response.ok) {
     const code = data?.error;
     const messages = {
+      unauthenticated: 'Сессия закончилась. Войди снова.',
       tenant_not_found: 'Это рабочее пространство не подключено к активной компании.',
       lead_service_unavailable: 'Сервис лидов временно недоступен.',
       invalid_lead: 'Проверь данные лида и попробуй снова.',
@@ -66,7 +68,12 @@ async function request(path = '', options = {}) {
     };
 
     throw new LeadsApiError(
-      messages[code] || 'Сервис лидов отклонил запрос.',
+      messages[code] ||
+        (response.status === 401
+          ? messages.unauthenticated
+          : response.status >= 500
+            ? messages.lead_service_unavailable
+            : 'Сервис лидов отклонил запрос.'),
       { status: response.status, code }
     );
   }

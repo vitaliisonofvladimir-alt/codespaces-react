@@ -1,12 +1,48 @@
-import { expect, test, vi } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
+import { AuthApiError } from './api/auth';
 
-test('renders the focused NVVAI welcome screen before the first message', () => {
+const authApi = vi.hoisted(() => ({
+  getCurrentUser: vi.fn(),
+  login: vi.fn(),
+  logout: vi.fn(),
+}));
+
+vi.mock('./api/auth', async () => {
+  const actual = await vi.importActual('./api/auth');
+  return {
+    ...actual,
+    getCurrentUser: authApi.getCurrentUser,
+    login: authApi.login,
+    logout: authApi.logout,
+  };
+});
+
+beforeEach(() => {
   window.location.hash = '';
+  vi.clearAllMocks();
+  authApi.getCurrentUser.mockResolvedValue({
+    id: 'user-1',
+    email: 'owner@example.com',
+    displayName: 'Owner',
+    role: 'owner',
+  });
+  authApi.login.mockResolvedValue({
+    user: {
+      id: 'user-1',
+      email: 'owner@example.com',
+      displayName: 'Owner',
+      role: 'owner',
+    },
+  });
+  authApi.logout.mockResolvedValue(undefined);
+});
+
+test('renders the focused NVVAI welcome screen before the first message', async () => {
   render(<App />);
 
-  expect(screen.getByRole('heading', { name: /чем я могу помочь/i }))
+  expect(await screen.findByRole('heading', { name: /чем я могу помочь/i }))
     .toBeDefined();
   expect(screen.getByText('NVVAI')).toBeDefined();
   expect(screen.getByRole('button', { name: /объясни сложную тему/i }))
@@ -15,7 +51,6 @@ test('renders the focused NVVAI welcome screen before the first message', () => 
 });
 
 test('navigates to the Leads workspace from the main navigation', async () => {
-  window.location.hash = '';
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
     ok: true,
     status: 200,
@@ -23,6 +58,7 @@ test('navigates to the Leads workspace from the main navigation', async () => {
   });
 
   render(<App />);
+  await screen.findByRole('heading', { name: /чем я могу помочь/i });
   fireEvent.click(screen.getByRole('button', { name: 'Лиды' }));
 
   expect(window.location.hash).toBe('#leads');
@@ -34,10 +70,10 @@ test('navigates to the Leads workspace from the main navigation', async () => {
   fetchMock.mockRestore();
 });
 
-test('supports selecting Agent mode in the chat workspace', () => {
-  window.location.hash = '';
+test('supports selecting Agent mode in the chat workspace', async () => {
   render(<App />);
 
+  await screen.findByRole('heading', { name: /чем я могу помочь/i });
   fireEvent.change(screen.getByRole('textbox'), {
     target: { value: 'Show mode controls' },
   });
@@ -48,16 +84,84 @@ test('supports selecting Agent mode in the chat workspace', () => {
   expect(screen.getByRole('button', { name: 'Agent' }).disabled).toBe(true);
 });
 
-test('fills the prompt when an example is selected', () => {
-  window.location.hash = '';
+test('fills the prompt when an example is selected', async () => {
   render(<App />);
 
+  await screen.findByRole('heading', { name: /чем я могу помочь/i });
   fireEvent.click(
     screen.getByRole('button', { name: /объясни сложную тему/i })
   );
 
   expect(screen.getByRole('textbox').value)
     .toBe('Объясни сложную тему простыми словами');
+});
+
+test('keeps the protected application hidden until login succeeds', async () => {
+  authApi.getCurrentUser.mockResolvedValue(null);
+  authApi.login.mockResolvedValue({
+    user: {
+      id: 'user-1',
+      email: 'owner@example.com',
+      displayName: 'Owner',
+      role: 'owner',
+    },
+  });
+
+  render(<App />);
+
+  expect(await screen.findByRole('heading', { name: /войти в nvvai/i }))
+    .toBeDefined();
+  expect(screen.queryByRole('heading', { name: /чем я могу помочь/i }))
+    .toBeNull();
+
+  fireEvent.change(screen.getByLabelText('Email'), {
+    target: { value: 'owner@example.com' },
+  });
+  fireEvent.change(screen.getByLabelText('Пароль'), {
+    target: { value: 'correct horse battery staple' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Войти' }));
+
+  expect(await screen.findByRole('heading', { name: /чем я могу помочь/i }))
+    .toBeDefined();
+  expect(authApi.login).toHaveBeenCalledWith({
+    email: 'owner@example.com',
+    password: 'correct horse battery staple',
+  });
+});
+
+test('renders a safe login error without exposing authentication details', async () => {
+  authApi.getCurrentUser.mockResolvedValue(null);
+  const error = new AuthApiError(
+    'Неверный email или пароль.',
+    { status: 401, code: 'invalid_credentials' }
+  );
+  authApi.login.mockRejectedValue(error);
+
+  render(<App />);
+  await screen.findByRole('heading', { name: /войти в nvvai/i });
+  fireEvent.change(screen.getByLabelText('Email'), {
+    target: { value: 'owner@example.com' },
+  });
+  fireEvent.change(screen.getByLabelText('Пароль'), {
+    target: { value: 'correct horse battery staple' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Войти' }));
+
+  expect((await screen.findByRole('alert')).textContent)
+    .toBe('Неверный email или пароль.');
+  expect(screen.queryByText(/argon|session|database|hash/i)).toBeNull();
+});
+
+test('logs out from the protected shell', async () => {
+  render(<App />);
+  await screen.findByRole('heading', { name: /чем я могу помочь/i });
+
+  fireEvent.click(screen.getByRole('button', { name: 'Выйти' }));
+
+  expect(await screen.findByRole('heading', { name: /войти в nvvai/i }))
+    .toBeDefined();
+  expect(authApi.logout).toHaveBeenCalledTimes(1);
 });
 
 test('sends a message to the API and renders the reply', async () => {
@@ -68,6 +172,7 @@ test('sends a message to the API and renders the reply', async () => {
   });
 
   render(<App />);
+  await screen.findByRole('heading', { name: /чем я могу помочь/i });
 
   fireEvent.change(screen.getByRole('textbox'), {
     target: { value: 'Привет!' },
@@ -118,6 +223,7 @@ test('starts voice recording when microphone button is pressed', async () => {
   };
 
   render(<App />);
+  await screen.findByRole('heading', { name: /чем я могу помочь/i });
 
   fireEvent.click(
     screen.getByRole('button', { name: /микрофон/i })
@@ -158,6 +264,7 @@ test('passes recorded audio to the transcription callback when recording stops',
   };
 
   render(<App onAudioReady={onAudioReady} />);
+  await screen.findByRole('heading', { name: /чем я могу помочь/i });
 
   fireEvent.click(
     screen.getByRole('button', { name: /микрофон/i })
@@ -213,6 +320,7 @@ test('transcribes recorded audio into the message input', async () => {
   };
 
   render(<App />);
+  await screen.findByRole('heading', { name: /чем я могу помочь/i });
 
   fireEvent.click(
     screen.getByRole('button', { name: /микрофон/i })

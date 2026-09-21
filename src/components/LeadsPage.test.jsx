@@ -135,6 +135,20 @@ describe('LeadsPage', () => {
     expect(screen.getByRole('button', { name: /повторить/i })).toBeDefined();
   });
 
+  test('hands an expired session back to the auth boundary', async () => {
+    const onSessionExpired = vi.fn().mockResolvedValue(true);
+    api.listLeads.mockRejectedValueOnce({ status: 401 });
+
+    render(<LeadsPage onSessionExpired={onSessionExpired} />);
+
+    await waitFor(() => {
+      expect(onSessionExpired).toHaveBeenCalledTimes(1);
+    });
+    expect(
+      screen.queryByText('Не удалось загрузить лидов. Попробуй ещё раз.')
+    ).toBeNull();
+  });
+
   test('switches to card view', async () => {
     render(<LeadsPage />);
     await screen.findByText('Alex Customer');

@@ -465,7 +465,7 @@ function EmptyState({ hasFilters, onClear, onCreate }) {
   );
 }
 
-export default function LeadsPage() {
+export default function LeadsPage({ onSessionExpired }) {
   const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -485,6 +485,10 @@ export default function LeadsPage() {
       setLeads(nextLeads);
     } catch (loadError) {
       if (loadError.name === 'AbortError') return;
+      if (loadError.status === 401) {
+        await onSessionExpired?.();
+        return;
+      }
       setError(
         loadError instanceof LeadsApiError
           ? loadError.message
@@ -590,6 +594,10 @@ export default function LeadsPage() {
       }
       setDraft(null);
     } catch (saveError) {
+      if (saveError.status === 401) {
+        await onSessionExpired?.();
+        return;
+      }
       setError(
         saveError instanceof LeadsApiError
           ? saveError.message
@@ -611,6 +619,10 @@ export default function LeadsPage() {
       setLeads((current) => current.filter((item) => item.id !== lead.id));
       setNotice('Лид удалён');
     } catch (deleteError) {
+      if (deleteError.status === 401) {
+        await onSessionExpired?.();
+        return;
+      }
       setError(
         deleteError instanceof LeadsApiError
           ? deleteError.message

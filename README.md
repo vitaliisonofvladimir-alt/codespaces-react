@@ -36,6 +36,27 @@ Then open <http://localhost:3000>. The browser sends `/api/chat` requests to
 Vite, which proxies them to the local Node API at `127.0.0.1:8787`; only that
 server calls the OpenAI Responses API.
 
+## NVVAI authentication UI
+
+The application shell is protected by the NVVAI email/password session API:
+
+- `GET /v1/auth/me` restores the server-side session on first load;
+- `POST /v1/auth/login` starts a session with `credentials: include`;
+- `POST /v1/auth/logout` ends the session;
+- passwords are validated in the form, sent only in the login request, and are
+  never stored in local storage or retained after the form submission.
+
+The optional `VITE_AUTH_API_BASE_URL` variable is intentionally empty by
+default. It may only be set after a tenant-aware edge route is configured that
+preserves the server-observed tenant `Host`, supports credentialed requests,
+and has an approved CORS/cookie policy. Do not point the browser at the shared
+`api.nvvai.site` origin as a workaround: the backend must resolve the tenant
+from the server-side host and the live Cloudflare Access path is not yet the
+final application route.
+
+The frontend auth UI and tenant-aware routing are separate changes. This branch
+does not change DNS, Cloudflare Access, CORS, gateway behavior, or production.
+
 ## Cloudflare Workers
 
 The production Worker serves the Vite build from `dist` and handles
