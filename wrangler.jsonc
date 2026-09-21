@@ -1,13 +1,38 @@
+
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
+
   "name": "codespaces-react",
+
   "main": "./server/worker.js",
+
   "compatibility_date": "2026-09-18",
-  "compatibility_flags": ["nodejs_compat"],
+
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
   }
 }
