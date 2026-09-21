@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
+import { AuthProvider, useAuth } from './auth/AuthContext';
 import ChatInput from './components/ChatInput';
 import ChatModeSelector from './components/ChatModeSelector';
 import { sendChatMessage } from './api/chat';
 import { transcribeRecording } from './api/transcription';
 import ChatMessages from './components/ChatMessages';
+import AuthScreen from './components/AuthScreen';
 import LeadsPage from './components/LeadsPage';
+import OrbitLogo from './components/OrbitLogo';
 
 const suggestions = [
   { label: 'Объясни сложную тему', prompt: 'Объясни сложную тему простыми словами', icon: '✦' },
@@ -12,24 +15,8 @@ const suggestions = [
   { label: 'Придумай идеи', prompt: 'Предложи несколько свежих идей для моего проекта', icon: '◎' },
 ];
 
-function OrbitLogo() {
-  return (
-    <svg className="brand-mark" viewBox="0 0 44 40" aria-hidden="true">
-      <defs>
-        <linearGradient id="orbit-gradient" x1="4" y1="34" x2="40" y2="6">
-          <stop stopColor="#0b57d0" />
-          <stop offset="1" stopColor="#8ab4f8" />
-        </linearGradient>
-      </defs>
-      <ellipse cx="22" cy="20" rx="17" ry="8.5" fill="none" stroke="url(#orbit-gradient)" strokeWidth="2.4" transform="rotate(-24 22 20)" />
-      <ellipse cx="22" cy="20" rx="17" ry="8.5" fill="none" stroke="#b6d2fb" strokeWidth="2.4" transform="rotate(35 22 20)" />
-      <circle cx="22" cy="20" r="5.2" fill="#0b57d0" />
-      <circle cx="36.5" cy="11.5" r="2.8" fill="#75a7f5" />
-    </svg>
-  );
-}
-
-function App({ onAudioReady }) {
+function ProtectedApp({ onAudioReady }) {
+  const { user, logout, logoutErrorMessage } = useAuth();
   const [view, setView] = useState(() =>
     window.location.hash === '#leads' ? 'leads' : 'chat'
   );
@@ -223,12 +210,32 @@ function App({ onAudioReady }) {
             <span className="workspace-chip__dot" />
             Рабочее пространство
           </span>
-          <span className="user-avatar">VN</span>
+          <div className="account-menu">
+            <span className="account-name" title={user?.email}>
+              {user?.displayName || user?.email || 'Участник'}
+            </span>
+            <span className="user-avatar">
+              {(user?.displayName || user?.email || 'U')
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => part[0])
+                .join('')
+                .toUpperCase()}
+            </span>
+            <button
+              className="logout-button"
+              onClick={() => logout()}
+              type="button"
+            >
+              Выйти
+            </button>
+          </div>
         </div>
       </header>
 
       {view === 'leads' ? (
-        <LeadsPage />
+        <LeadsPage onSessionExpired={logout} />
       ) : (
         <main className="main-content">
           {!hasConversation ? (
@@ -266,9 +273,11 @@ function App({ onAudioReady }) {
               <div className="chat-composer">{composer}</div>
             </section>
           )}
-
-          {error && <p className="error-message" role="alert">{error}</p>}
         </main>
+      )}
+      {error && <p className="error-message" role="alert">{error}</p>}
+      {logoutErrorMessage && (
+        <p className="error-message" role="alert">{logoutErrorMessage}</p>
       )}
       {view === 'chat' && !hasConversation && (
         <footer className="site-footer">
@@ -276,6 +285,38 @@ function App({ onAudioReady }) {
         </footer>
       )}
     </div>
+  );
+}
+
+function AppGate({ onAudioReady }) {
+  const {
+    status,
+    authErrorMessage,
+    isSubmitting,
+    login,
+    refreshSession,
+  } = useAuth();
+
+  if (status !== 'authenticated') {
+    return (
+      <AuthScreen
+        errorMessage={authErrorMessage}
+        isSubmitting={isSubmitting}
+        onLogin={login}
+        onRetry={() => refreshSession()}
+        status={status}
+      />
+    );
+  }
+
+  return <ProtectedApp onAudioReady={onAudioReady} />;
+}
+
+function App({ onAudioReady }) {
+  return (
+    <AuthProvider>
+      <AppGate onAudioReady={onAudioReady} />
+    </AuthProvider>
   );
 }
 
