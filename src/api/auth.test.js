@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   AuthApiError,
+  exchangeMagicLink,
   getCurrentUser,
-  login,
   logout,
+  requestMagicLink,
 } from './auth';
 
 describe('Auth API client', () => {
@@ -11,18 +12,15 @@ describe('Auth API client', () => {
     vi.restoreAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   test('bootstraps the session with credentials included', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({
-        user: {
-          id: 'user-1',
-          email: 'owner@example.com',
-          displayName: 'Owner',
-          role: 'owner',
-        },
-      }),
+      json: async () => ({ user: { id: 'u1', email: 'owner@example.com' } }),
     });
 
     await expect(getCurrentUser()).resolves.toMatchObject({
@@ -33,70 +31,73 @@ describe('Auth API client', () => {
       expect.objectContaining({
         credentials: 'include',
         headers: { accept: 'application/json' },
-      })
+      }),
     );
   });
 
-  test('posts login credentials without persisting or returning the password', async () => {
+  test('requests a magic link with normalized email and an enumeration-safe response', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 202,
+      json: async () => ({ ok: true }),
+    });
+
+    await expect(requestMagicLink({ email: ' owner@example.com ' }))
+      .resolves.toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/v1/auth/magic-link/request',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({ email: 'owner@example.com' }),
+      }),
+    );
+  });
+
+  test('exchanges the one-time token without persisting it and receives a session cookie', async () => {
+    const token = 't'.repeat(43);
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => ({
-        user: {
-          id: 'user-1',
-          email: 'owner@example.com',
-          displayName: 'Owner',
-          role: 'owner',
-        },
+        user: { id: 'u1', email: 'owner@example.com', role: 'owner' },
         expiresAt: '2026-09-28T00:00:00.000Z',
       }),
     });
 
-    await expect(
-      login({
-        email: 'OWNER@EXAMPLE.COM',
-        password: 'correct horse battery staple',
-      })
-    ).resolves.toMatchObject({
+    await expect(exchangeMagicLink({ token })).resolves.toMatchObject({
       user: { role: 'owner' },
     });
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      '/v1/auth/login',
-      expect.objectContaining({
-        method: 'POST',
-        credentials: 'include',
-        body: JSON.stringify({
-          email: 'OWNER@EXAMPLE.COM',
-          password: 'correct horse battery staple',
-        }),
-      })
-    );
+    const [, options] = fetchMock.mock.calls[0];
+    expect(fetchMock.mock.calls[0][0]).toBe('/v1/auth/magic-link/exchange');
+    expect(options.credentials).toBe('include');
+    expect(options.body).toBe(JSON.stringify({ token }));
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
   });
 
-  test('maps invalid credentials and tolerates a non-JSON error response', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+  test('maps invalid/expired links to safe copy and handles non-JSON errors', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
-      status: 401,
-      json: async () => ({ error: 'invalid_credentials' }),
+      status: 400,
+      json: async () => ({ error: 'invalid_or_expired_link' }),
     });
 
-    await expect(login({ email: 'owner@example.com', password: 'wrong password' }))
+    await expect(exchangeMagicLink({ token: 't'.repeat(43) }))
       .rejects.toMatchObject({
         name: 'AuthApiError',
-        status: 401,
-        code: 'invalid_credentials',
-        message: 'Неверный email или пароль.',
+        status: 400,
+        code: 'invalid_or_expired_link',
+        message: 'Ссылка недействительна или устарела. Запроси новую ссылку для входа.',
       });
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 503,
       json: async () => {
         throw new Error('HTML body');
       },
     });
-
     await expect(getCurrentUser()).rejects.toMatchObject({
       name: 'AuthApiError',
       status: 503,
@@ -114,10 +115,7 @@ describe('Auth API client', () => {
     await expect(logout()).resolves.toBeUndefined();
     expect(fetchMock).toHaveBeenCalledWith(
       '/v1/auth/logout',
-      expect.objectContaining({
-        method: 'POST',
-        credentials: 'include',
-      })
+      expect.objectContaining({ method: 'POST', credentials: 'include' }),
     );
     expect(new AuthApiError('test')).toBeInstanceOf(Error);
   });

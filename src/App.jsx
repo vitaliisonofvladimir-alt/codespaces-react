@@ -292,17 +292,33 @@ function AppGate({ onAudioReady }) {
   const {
     status,
     authErrorMessage,
+    authActionErrorMessage,
     isSubmitting,
-    login,
+    requestMagicLink,
+    magicLinkSent,
+    hasMagicLinkToken,
     refreshSession,
   } = useAuth();
+
+  if (hasMagicLinkToken) {
+    return (
+      <main className="auth-screen auth-screen--loading" aria-busy="true">
+        <div className="auth-loading-card">
+          <span className="auth-loading-mark" aria-hidden="true" />
+          <p>Проверяем ссылку для входа…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (status !== 'authenticated') {
     return (
       <AuthScreen
         errorMessage={authErrorMessage}
+        actionErrorMessage={authActionErrorMessage}
         isSubmitting={isSubmitting}
-        onLogin={login}
+        magicLinkSent={magicLinkSent}
+        onRequestMagicLink={requestMagicLink}
         onRetry={() => refreshSession()}
         status={status}
       />
