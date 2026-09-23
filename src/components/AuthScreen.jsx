@@ -2,25 +2,12 @@ import { useState } from 'react';
 import OrbitLogo from './OrbitLogo';
 
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-const PASSWORD_MIN_LENGTH = 12;
-const PASSWORD_MAX_LENGTH = 128;
 
-function validateCredentials(email, password) {
-  const errors = {};
+function validateEmail(email) {
   const normalizedEmail = email.trim();
-
-  if (!normalizedEmail || !EMAIL_PATTERN.test(normalizedEmail)) {
-    errors.email = 'Введи корректный email.';
-  }
-
-  if (
-    password.length < PASSWORD_MIN_LENGTH ||
-    password.length > PASSWORD_MAX_LENGTH
-  ) {
-    errors.password = `Пароль должен содержать от ${PASSWORD_MIN_LENGTH} до ${PASSWORD_MAX_LENGTH} символов.`;
-  }
-
-  return errors;
+  return normalizedEmail && EMAIL_PATTERN.test(normalizedEmail)
+    ? ''
+    : 'Введи корректный email.';
 }
 
 function LoadingMark() {
@@ -30,38 +17,32 @@ function LoadingMark() {
 export default function AuthScreen({
   status,
   errorMessage,
+  actionErrorMessage = '',
   isSubmitting,
-  onLogin,
+  magicLinkSent = false,
+  onRequestMagicLink,
   onRetry,
 }) {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [emailError, setEmailError] = useState('');
 
   async function submit(event) {
     event.preventDefault();
-    const nextErrors = validateCredentials(email, password);
-    setFieldErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    const nextError = validateEmail(email);
+    setEmailError(nextError);
+    if (nextError) return;
 
     try {
-      await onLogin({ email: email.trim(), password });
+      await onRequestMagicLink(email.trim());
     } catch {
-      // The provider exposes a safe message; the form stays available for a
-      // corrected attempt and never persists the password.
-    } finally {
-      setPassword('');
+      // The provider exposes a safe message. The form stays available for a
+      // retry, without storing credentials beyond this component.
     }
   }
 
   function changeEmail(event) {
     setEmail(event.target.value);
-    setFieldErrors((current) => ({ ...current, email: undefined }));
-  }
-
-  function changePassword(event) {
-    setPassword(event.target.value);
-    setFieldErrors((current) => ({ ...current, password: undefined }));
+    setEmailError('');
   }
 
   if (status === 'loading') {
@@ -130,13 +111,19 @@ export default function AuthScreen({
         <section className="auth-card" aria-describedby="auth-help">
           <div className="auth-card__heading">
             <span className="eyebrow">Добро пожаловать</span>
-            <h2 id="auth-title">Войти в NVVAI</h2>
-            <p id="auth-help">Используй рабочий email и пароль владельца или участника.</p>
+            <h2 id="auth-title">Войти по ссылке</h2>
+            <p id="auth-help">Укажи рабочий email. Отправим одноразовую ссылку для входа, если адрес подключён к компании.</p>
           </div>
 
-          {errorMessage && (
+          {actionErrorMessage && (
             <div className="auth-alert" role="alert">
-              {errorMessage}
+              {actionErrorMessage}
+            </div>
+          )}
+
+          {magicLinkSent && (
+            <div className="auth-success" role="status" aria-live="polite">
+              Если этот адрес подключён к компании, письмо со ссылкой уже отправлено. Проверь входящие и папку «Спам».
             </div>
           )}
 
@@ -144,9 +131,9 @@ export default function AuthScreen({
             <label className="auth-field">
               <span>Email</span>
               <input
-                aria-describedby={fieldErrors.email ? 'auth-email-error' : undefined}
-                aria-invalid={Boolean(fieldErrors.email)}
-                autoComplete="username"
+                aria-describedby={emailError ? 'auth-email-error' : undefined}
+                aria-invalid={Boolean(emailError)}
+                autoComplete="email"
                 autoFocus
                 inputMode="email"
                 onChange={changeEmail}
@@ -154,25 +141,8 @@ export default function AuthScreen({
                 type="email"
                 value={email}
               />
-              {fieldErrors.email && (
-                <small id="auth-email-error">{fieldErrors.email}</small>
-              )}
-            </label>
-
-            <label className="auth-field">
-              <span>Пароль</span>
-              <input
-                aria-describedby={fieldErrors.password ? 'auth-password-error' : undefined}
-                aria-invalid={Boolean(fieldErrors.password)}
-                autoComplete="current-password"
-                maxLength={PASSWORD_MAX_LENGTH}
-                onChange={changePassword}
-                placeholder="Не меньше 12 символов"
-                type="password"
-                value={password}
-              />
-              {fieldErrors.password && (
-                <small id="auth-password-error">{fieldErrors.password}</small>
+              {emailError && (
+                <small id="auth-email-error">{emailError}</small>
               )}
             </label>
 
@@ -184,16 +154,16 @@ export default function AuthScreen({
               {isSubmitting ? (
                 <>
                   <span className="button-spinner" aria-hidden="true" />
-                  Проверяем…
+                  Отправляем…
                 </>
               ) : (
-                'Войти'
+                magicLinkSent ? 'Отправить ещё раз' : 'Отправить ссылку'
               )}
             </button>
           </form>
 
           <p className="auth-security-note">
-            Сессия защищена cookie, а пароль не сохраняется в браузере.
+            Ссылка одноразовая и действует 15 минут. После входа сессия хранится в защищённой cookie.
           </p>
         </section>
       </div>

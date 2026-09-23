@@ -6,7 +6,10 @@ const API_BASE_URL = (import.meta.env?.VITE_AUTH_API_BASE_URL ?? '').replace(
 const AUTH_PATH = '/v1/auth';
 
 const ERROR_MESSAGES = Object.freeze({
-  invalid_credentials: 'Неверный email или пароль.',
+  invalid_or_expired_link:
+    'Ссылка недействительна или устарела. Запроси новую ссылку для входа.',
+  rate_limited:
+    'Слишком много попыток. Подожди немного и попробуй ещё раз.',
   unauthenticated: 'Сессия закончилась. Войди снова.',
   tenant_not_found: 'Этот адрес ещё не подключён к рабочему пространству.',
   tenant_resolution_unavailable:
@@ -15,7 +18,7 @@ const ERROR_MESSAGES = Object.freeze({
     'Сервис авторизации временно недоступен. Попробуй ещё раз.',
   content_type_must_be_application_json:
     'Сервис авторизации получил неподдерживаемый формат запроса.',
-  invalid_auth_input: 'Проверь email и пароль и попробуй ещё раз.',
+  invalid_auth_input: 'Проверь email и попробуй ещё раз.',
 });
 
 export class AuthApiError extends Error {
@@ -98,10 +101,17 @@ export async function getCurrentUser({ signal } = {}) {
   return data?.user ?? null;
 }
 
-export async function login({ email, password }) {
-  const data = await request('/login', {
+export async function requestMagicLink({ email }) {
+  return request('/magic-link/request', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email: email.trim() }),
+  });
+}
+
+export async function exchangeMagicLink({ token }) {
+  const data = await request('/magic-link/exchange', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
   });
   return data;
 }
@@ -117,10 +127,6 @@ export function getAuthErrorMessage(error, context = 'generic') {
     return context === 'logout'
       ? 'Не удалось завершить сессию. Попробуй ещё раз.'
       : 'Не удалось выполнить запрос авторизации.';
-  }
-
-  if (context === 'login' && error.status === 401) {
-    return ERROR_MESSAGES.invalid_credentials;
   }
 
   if (context === 'bootstrap' && error.status === 401) {

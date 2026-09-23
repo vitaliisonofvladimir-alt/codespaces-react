@@ -4,17 +4,27 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
   AuthApiError,
   getAuthErrorMessage,
   getCurrentUser,
-  login as loginRequest,
+  requestMagicLink as requestMagicLinkRequest,
+  exchangeMagicLink as exchangeMagicLinkRequest,
   logout as logoutRequest,
 } from '../api/auth';
 
 const AuthContext = createContext(null);
+const MAGIC_LINK_TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,128}$/;
+
+function clearMagicLinkTokenFromAddress() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('token');
+  url.searchParams.delete('error');
+  window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+}
 
 export function AuthProvider({ children }) {
   const [status, setStatus] = useState('loading');
@@ -22,6 +32,17 @@ export function AuthProvider({ children }) {
   const [authError, setAuthError] = useState(null);
   const [logoutError, setLogoutError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [authActionError, setAuthActionError] = useState(null);
+  const [hasMagicLinkToken, setHasMagicLinkToken] = useState(
+    () => new URLSearchParams(window.location.search).has('token')
+      || new URLSearchParams(window.location.search).has('error'),
+  );
+  const hadMagicLinkTokenAtStartup = useRef(
+    new URLSearchParams(window.location.search).has('token')
+      || new URLSearchParams(window.location.search).has('error'),
+  );
+  const exchangedTokenRef = useRef(null);
 
   const refreshSession = useCallback(async ({ signal } = {}) => {
     setStatus('loading');
@@ -55,36 +76,92 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (hadMagicLinkTokenAtStartup.current) return undefined;
     const controller = new AbortController();
     refreshSession({ signal: controller.signal });
 
     return () => controller.abort();
   }, [refreshSession]);
 
-  const login = useCallback(async (credentials) => {
+  const requestMagicLink = useCallback(async (email) => {
     setIsSubmitting(true);
+    setMagicLinkSent(false);
+    setAuthActionError(null);
     setAuthError(null);
 
     try {
-      const result = await loginRequest(credentials);
-      setUser(result.user);
-      setStatus('authenticated');
-      return result.user;
+      await requestMagicLinkRequest({ email });
+      setMagicLinkSent(true);
+      return true;
     } catch (error) {
-      setUser(null);
-      if (
-        error instanceof AuthApiError &&
-        (error.status === 404 || error.status >= 500)
-      ) {
-        setStatus('unavailable');
-      } else {
-        setStatus('unauthenticated');
-      }
-      setAuthError(error);
+      setAuthActionError(error);
       throw error;
     } finally {
       setIsSubmitting(false);
     }
+  }, []);
+
+  const exchangeMagicLink = useCallback(async (token) => {
+    setIsSubmitting(true);
+    setAuthActionError(null);
+    setHasMagicLinkToken(true);
+
+    try {
+      const result = await exchangeMagicLinkRequest({ token });
+      setUser(result.user);
+      setStatus('authenticated');
+      setMagicLinkSent(false);
+      clearMagicLinkTokenFromAddress();
+      setHasMagicLinkToken(false);
+      return result.user;
+    } catch (error) {
+      setUser(null);
+      setStatus('unauthenticated');
+      setAuthActionError(error);
+      clearMagicLinkTokenFromAddress();
+      setHasMagicLinkToken(false);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+      clearMagicLinkTokenFromAddress();
+    }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('token')) {
+      if (params.has('error')) {
+        clearMagicLinkTokenFromAddress();
+        setAuthActionError(new AuthApiError(
+          'Ссылка недействительна или устарела. Запроси новую ссылку для входа.',
+          { status: 400, code: 'invalid_or_expired_link' },
+        ));
+        setStatus('unauthenticated');
+        setHasMagicLinkToken(false);
+      }
+      return undefined;
+    }
+    const values = params.getAll('token');
+    if (values.length !== 1 || !MAGIC_LINK_TOKEN_PATTERN.test(values[0])) {
+      clearMagicLinkTokenFromAddress();
+      setAuthActionError(new AuthApiError(
+        'Ссылка недействительна или устарела. Запроси новую ссылку для входа.',
+        { status: 400, code: 'invalid_or_expired_link' },
+      ));
+      setStatus('unauthenticated');
+      setHasMagicLinkToken(false);
+      return undefined;
+    }
+    const token = values[0];
+    if (exchangedTokenRef.current === token) return undefined;
+    exchangedTokenRef.current = token;
+    void exchangeMagicLink(token).catch(() => {});
+    return undefined;
+  }, [exchangeMagicLink]);
+
+  const clearMagicLinkNotice = useCallback(() => {
+    setMagicLinkSent(false);
+    setAuthActionError(null);
   }, []);
 
   const logout = useCallback(async () => {
@@ -120,7 +197,11 @@ export function AuthProvider({ children }) {
       authError,
       logoutError,
       isSubmitting,
-      login,
+      requestMagicLink,
+      magicLinkSent,
+      hasMagicLinkToken,
+      clearMagicLinkNotice,
+      authActionErrorMessage: getAuthErrorMessage(authActionError),
       logout,
       refreshSession,
       authErrorMessage: getAuthErrorMessage(
@@ -135,7 +216,11 @@ export function AuthProvider({ children }) {
       authError,
       logoutError,
       isSubmitting,
-      login,
+      requestMagicLink,
+      magicLinkSent,
+      hasMagicLinkToken,
+      clearMagicLinkNotice,
+      authActionError,
       logout,
       refreshSession,
     ]

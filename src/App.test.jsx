@@ -5,7 +5,8 @@ import { AuthApiError } from './api/auth';
 
 const authApi = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
-  login: vi.fn(),
+  requestMagicLink: vi.fn(),
+  exchangeMagicLink: vi.fn(),
   logout: vi.fn(),
 }));
 
@@ -14,7 +15,8 @@ vi.mock('./api/auth', async () => {
   return {
     ...actual,
     getCurrentUser: authApi.getCurrentUser,
-    login: authApi.login,
+    requestMagicLink: authApi.requestMagicLink,
+    exchangeMagicLink: authApi.exchangeMagicLink,
     logout: authApi.logout,
   };
 });
@@ -28,7 +30,8 @@ beforeEach(() => {
     displayName: 'Owner',
     role: 'owner',
   });
-  authApi.login.mockResolvedValue({
+  authApi.requestMagicLink.mockResolvedValue({ ok: true });
+  authApi.exchangeMagicLink.mockResolvedValue({
     user: {
       id: 'user-1',
       email: 'owner@example.com',
@@ -96,20 +99,12 @@ test('fills the prompt when an example is selected', async () => {
     .toBe('Объясни сложную тему простыми словами');
 });
 
-test('keeps the protected application hidden until login succeeds', async () => {
+test('keeps the protected application hidden after requesting a magic link', async () => {
   authApi.getCurrentUser.mockResolvedValue(null);
-  authApi.login.mockResolvedValue({
-    user: {
-      id: 'user-1',
-      email: 'owner@example.com',
-      displayName: 'Owner',
-      role: 'owner',
-    },
-  });
 
   render(<App />);
 
-  expect(await screen.findByRole('heading', { name: /войти в nvvai/i }))
+  expect(await screen.findByRole('heading', { name: /войти по ссылке/i }))
     .toBeDefined();
   expect(screen.queryByRole('heading', { name: /чем я могу помочь/i }))
     .toBeNull();
@@ -117,39 +112,32 @@ test('keeps the protected application hidden until login succeeds', async () => 
   fireEvent.change(screen.getByLabelText('Email'), {
     target: { value: 'owner@example.com' },
   });
-  fireEvent.change(screen.getByLabelText('Пароль'), {
-    target: { value: 'correct horse battery staple' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Войти' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Отправить ссылку' }));
 
-  expect(await screen.findByRole('heading', { name: /чем я могу помочь/i }))
-    .toBeDefined();
-  expect(authApi.login).toHaveBeenCalledWith({
+  expect(await screen.findByRole('status')).toBeDefined();
+  expect(screen.queryByRole('heading', { name: /чем я могу помочь/i })).toBeNull();
+  expect(authApi.requestMagicLink).toHaveBeenCalledWith({
     email: 'owner@example.com',
-    password: 'correct horse battery staple',
   });
 });
 
-test('renders a safe login error without exposing authentication details', async () => {
+test('renders a safe magic-link error without exposing authentication details', async () => {
   authApi.getCurrentUser.mockResolvedValue(null);
   const error = new AuthApiError(
-    'Неверный email или пароль.',
-    { status: 401, code: 'invalid_credentials' }
+    'Слишком много попыток. Подожди немного и попробуй ещё раз.',
+    { status: 429, code: 'rate_limited' }
   );
-  authApi.login.mockRejectedValue(error);
+  authApi.requestMagicLink.mockRejectedValue(error);
 
   render(<App />);
-  await screen.findByRole('heading', { name: /войти в nvvai/i });
+  await screen.findByRole('heading', { name: /войти по ссылке/i });
   fireEvent.change(screen.getByLabelText('Email'), {
     target: { value: 'owner@example.com' },
   });
-  fireEvent.change(screen.getByLabelText('Пароль'), {
-    target: { value: 'correct horse battery staple' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Войти' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Отправить ссылку' }));
 
   expect((await screen.findByRole('alert')).textContent)
-    .toBe('Неверный email или пароль.');
+    .toBe('Слишком много попыток. Подожди немного и попробуй ещё раз.');
   expect(screen.queryByText(/argon|session|database|hash/i)).toBeNull();
 });
 
@@ -159,7 +147,7 @@ test('logs out from the protected shell', async () => {
 
   fireEvent.click(screen.getByRole('button', { name: 'Выйти' }));
 
-  expect(await screen.findByRole('heading', { name: /войти в nvvai/i }))
+  expect(await screen.findByRole('heading', { name: /войти по ссылке/i }))
     .toBeDefined();
   expect(authApi.logout).toHaveBeenCalledTimes(1);
 });
