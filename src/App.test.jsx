@@ -73,6 +73,41 @@ test('navigates to the Leads workspace from the main navigation', async () => {
   fetchMock.mockRestore();
 });
 
+test('does not carry a chat error into the Leads workspace', async () => {
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+    if (url === '/api/chat') {
+      return {
+        ok: false,
+        status: 503,
+        text: async () => JSON.stringify({ error: 'OPENAI_API_KEY is not configured' }),
+      };
+    }
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ leads: [] }),
+    };
+  });
+
+  render(<App />);
+  await screen.findByRole('heading', { name: /чем я могу помочь/i });
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: 'Проверка ошибки чата' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: /отправить/i }));
+
+  expect((await screen.findByRole('alert')).textContent)
+    .toContain('OPENAI_API_KEY is not configured');
+
+  fireEvent.click(screen.getByRole('button', { name: 'Лиды' }));
+  expect(await screen.findByRole('heading', { name: 'Лиды' })).toBeDefined();
+  expect(screen.queryByRole('alert')).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Ассистент' }));
+  expect(screen.queryByRole('alert')).toBeNull();
+  fetchMock.mockRestore();
+});
+
 test('supports selecting Agent mode in the chat workspace', async () => {
   render(<App />);
 
