@@ -34,6 +34,7 @@ function ProtectedApp({ onAudioReady }) {
   useEffect(() => {
     function syncView() {
       setView(window.location.hash === '#leads' ? 'leads' : 'chat');
+      setError('');
     }
 
     window.addEventListener('hashchange', syncView);
@@ -46,6 +47,7 @@ function ProtectedApp({ onAudioReady }) {
       window.history.pushState({}, '', nextHash);
     }
     setView(nextView);
+    setError('');
   }
 
   async function startRecording() {
@@ -275,7 +277,9 @@ function ProtectedApp({ onAudioReady }) {
           )}
         </main>
       )}
-      {error && <p className="error-message" role="alert">{error}</p>}
+      {view === 'chat' && error && (
+        <p className="error-message" role="alert">{error}</p>
+      )}
       {logoutErrorMessage && (
         <p className="error-message" role="alert">{logoutErrorMessage}</p>
       )}
