@@ -38,24 +38,24 @@ server calls the OpenAI Responses API.
 
 ## NVVAI authentication UI
 
-The application shell is protected by the NVVAI email/password session API:
+The application shell uses the owner-only, passwordless magic-link flow:
 
 - `GET /v1/auth/me` restores the server-side session on first load;
-- `POST /v1/auth/login` starts a session with `credentials: include`;
-- `POST /v1/auth/logout` ends the session;
-- passwords are validated in the form, sent only in the login request, and are
-  never stored in local storage or retained after the form submission.
+- `POST /v1/auth/magic-link/request` requests a one-time email link;
+- `POST /v1/auth/magic-link/exchange` exchanges its token for a Secure,
+  HttpOnly session cookie;
+- `POST /v1/auth/logout` ends the session.
 
-The optional `VITE_AUTH_API_BASE_URL` variable is intentionally empty by
-default. It may only be set after a tenant-aware edge route is configured that
-preserves the server-observed tenant `Host`, supports credentialed requests,
-and has an approved CORS/cookie policy. Do not point the browser at the shared
-`api.nvvai.site` origin as a workaround: the backend must resolve the tenant
-from the server-side host and the live Cloudflare Access path is not yet the
-final application route.
+For the dedicated staging build, run `npm run build:staging`; both clients use
+the fixed `https://staging-api.nvvai.site` origin in staging mode. Staging mode
+ignores browser-provided API-origin overrides. The staging API allowlist must contain only
+`https://staging-app.nvvai.site` and must support credentialed requests and
+preflight. Do not put Cloudflare Access Service Tokens, or any other
+credentials, into `VITE_*` variables: those values are shipped to the browser.
 
-The frontend auth UI and tenant-aware routing are separate changes. This branch
-does not change DNS, Cloudflare Access, CORS, gateway behavior, or production.
+The API resolves tenant identity from the server-side `Host`; the staging
+Tunnel must preserve the configured staging tenant Host. This code change does
+not modify DNS, Cloudflare Access, Tunnel routing, deployment, or production.
 
 ## Cloudflare Workers
 

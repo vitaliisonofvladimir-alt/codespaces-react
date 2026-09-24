@@ -1,9 +1,22 @@
-const API_BASE_URL = (import.meta.env?.VITE_LEADS_API_BASE_URL ?? '').replace(
-  /\/$/,
-  ''
-);
-
 const LEADS_PATH = '/v1/leads';
+export const STAGING_LEADS_API_ORIGIN = 'https://staging-api.nvvai.site';
+
+export function resolveLeadsApiBaseUrl({
+  mode = import.meta.env?.MODE ?? '',
+  configuredOrigin = import.meta.env?.VITE_LEADS_API_BASE_URL ?? '',
+} = {}) {
+  if (mode === 'staging') {
+    if (configuredOrigin && configuredOrigin !== STAGING_LEADS_API_ORIGIN) {
+      throw new Error('Staging leads API origin must match the approved host');
+    }
+    return STAGING_LEADS_API_ORIGIN;
+  }
+  return configuredOrigin.replace(/\/$/, '');
+}
+
+export function buildLeadsApiUrl(path = '', options) {
+  return `${resolveLeadsApiBaseUrl(options)}${LEADS_PATH}${path}`;
+}
 
 export const LEAD_STATUSES = Object.freeze([
   'new',
@@ -23,7 +36,7 @@ export class LeadsApiError extends Error {
 }
 
 function buildUrl(path = '') {
-  return `${API_BASE_URL}${LEADS_PATH}${path}`;
+  return buildLeadsApiUrl(path);
 }
 
 async function request(path = '', options = {}) {

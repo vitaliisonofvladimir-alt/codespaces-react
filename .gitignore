@@ -119,10 +119,12 @@ dist
 # misc
 .DS_Store
 .env.local
+.env.staging
 .dev.vars
 .env.development.local
 .env.test.local
 .env.production.local
+.env.staging.local
 
 npm-debug.log*
 yarn-debug.log*

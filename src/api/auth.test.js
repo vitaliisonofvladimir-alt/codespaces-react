@@ -4,7 +4,9 @@ import {
   exchangeMagicLink,
   getCurrentUser,
   logout,
+  buildAuthApiUrl,
   requestMagicLink,
+  resolveAuthApiBaseUrl,
 } from './auth';
 
 describe('Auth API client', () => {
@@ -33,6 +35,17 @@ describe('Auth API client', () => {
         headers: { accept: 'application/json' },
       }),
     );
+  });
+
+  test('staging mode pins auth traffic to the dedicated staging API hostname', async () => {
+    expect(resolveAuthApiBaseUrl({ mode: 'staging' }))
+      .toBe('https://staging-api.nvvai.site');
+    expect(() => resolveAuthApiBaseUrl({
+      mode: 'staging',
+      configuredOrigin: 'https://api.nvvai.site',
+    })).toThrow('Staging auth API origin must match the approved host');
+    expect(buildAuthApiUrl('/me', { mode: 'staging' }))
+      .toBe('https://staging-api.nvvai.site/v1/auth/me');
   });
 
   test('requests a magic link with normalized email and an enumeration-safe response', async () => {
