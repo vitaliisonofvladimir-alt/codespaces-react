@@ -7,6 +7,8 @@ describe('Wrangler deployment configuration', () => {
 
     const config = JSON.parse(readFileSync('wrangler.jsonc', 'utf8'));
 
+    expect(config.name).toBe('codespaces-react');
+    expect(config.env.staging.name).toBe('codespaces-react-staging');
     expect(config.main).toBe('./server/worker.js');
     expect(config.assets).toMatchObject({
       directory: './dist',

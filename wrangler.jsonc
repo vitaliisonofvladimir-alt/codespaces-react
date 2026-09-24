@@ -12,6 +12,12 @@
     "nodejs_compat"
   ],
 
+  "env": {
+    "staging": {
+      "name": "codespaces-react-staging"
+    }
+  },
+
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
