@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import {
+  buildLeadsApiUrl,
   createLead,
   deleteLead,
   listLeads,
   LeadsApiError,
+  resolveLeadsApiBaseUrl,
   updateLead,
 } from './leads';
 
@@ -28,6 +30,17 @@ describe('Leads API client', () => {
         headers: { accept: 'application/json' },
       })
     );
+  });
+
+  test('staging mode pins leads traffic to the dedicated staging API hostname', async () => {
+    expect(resolveLeadsApiBaseUrl({ mode: 'staging' }))
+      .toBe('https://staging-api.nvvai.site');
+    expect(() => resolveLeadsApiBaseUrl({
+      mode: 'staging',
+      configuredOrigin: 'https://api.nvvai.site',
+    })).toThrow('Staging leads API origin must match the approved host');
+    expect(buildLeadsApiUrl('', { mode: 'staging' }))
+      .toBe('https://staging-api.nvvai.site/v1/leads');
   });
 
   test('creates, updates, and deletes a lead using the API contract', async () => {

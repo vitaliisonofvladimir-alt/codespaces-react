@@ -22,6 +22,7 @@
     "web": "BROWSER=none WDS_SOCKET_PORT=0 vite --port 3000",
     "api": "node --env-file-if-exists=.env.local server/index.js",
     "build": "vite build",
+    "build:staging": "vite build --mode staging",
     "deploy": "npm run build && wrangler deploy",
     "preview": "vite preview",
     "test": "vitest"

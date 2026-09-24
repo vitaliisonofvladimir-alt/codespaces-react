@@ -1,9 +1,22 @@
-const API_BASE_URL = (import.meta.env?.VITE_AUTH_API_BASE_URL ?? '').replace(
-  /\/$/,
-  ''
-);
-
 const AUTH_PATH = '/v1/auth';
+export const STAGING_API_ORIGIN = 'https://staging-api.nvvai.site';
+
+export function resolveAuthApiBaseUrl({
+  mode = import.meta.env?.MODE ?? '',
+  configuredOrigin = import.meta.env?.VITE_AUTH_API_BASE_URL ?? '',
+} = {}) {
+  if (mode === 'staging') {
+    if (configuredOrigin && configuredOrigin !== STAGING_API_ORIGIN) {
+      throw new Error('Staging auth API origin must match the approved host');
+    }
+    return STAGING_API_ORIGIN;
+  }
+  return configuredOrigin.replace(/\/$/, '');
+}
+
+export function buildAuthApiUrl(path = '', options) {
+  return `${resolveAuthApiBaseUrl(options)}${AUTH_PATH}${path}`;
+}
 
 const ERROR_MESSAGES = Object.freeze({
   invalid_or_expired_link:
@@ -31,7 +44,7 @@ export class AuthApiError extends Error {
 }
 
 function buildUrl(path = '') {
-  return `${API_BASE_URL}${AUTH_PATH}${path}`;
+  return buildAuthApiUrl(path);
 }
 
 function messageForResponse(code, status) {
