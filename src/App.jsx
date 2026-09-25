@@ -8,6 +8,7 @@ import ChatMessages from './components/ChatMessages';
 import AuthScreen from './components/AuthScreen';
 import LeadsPage from './components/LeadsPage';
 import OrbitLogo from './components/OrbitLogo';
+import PublicHvacDemo from './components/PublicHvacDemo';
 
 const suggestions = [
   { label: 'Объясни сложную тему', prompt: 'Объясни сложную тему простыми словами', icon: '✦' },
@@ -333,6 +334,10 @@ function AppGate({ onAudioReady }) {
 }
 
 function App({ onAudioReady }) {
+  if (window.location.pathname === '/demo/hvac') {
+    return <PublicHvacDemo />;
+  }
+
   return (
     <AuthProvider>
       <AppGate onAudioReady={onAudioReady} />
