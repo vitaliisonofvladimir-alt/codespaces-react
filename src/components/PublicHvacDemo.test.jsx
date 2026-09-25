@@ -50,6 +50,36 @@ test('requires a contact method and verified challenge before submission', async
   vi.unstubAllEnvs();
 });
 
+test('keeps the idempotency key for a retry of the same submitted payload', async () => {
+  vi.stubEnv('VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY', 'sitekey-demo');
+  api.submitPublicLead
+    .mockRejectedValueOnce(new Error('Temporary network failure'))
+    .mockResolvedValueOnce({ id: 'lead-demo-2', status: 'new' });
+  render(<PublicHvacDemo />);
+
+  fireEvent.change(screen.getByLabelText('Как к тебе обращаться'), {
+    target: { value: 'Alex' },
+  });
+  fireEvent.change(screen.getByLabelText('Телефон'), {
+    target: { value: '+15550100' },
+  });
+  fireEvent.change(screen.getByLabelText('Что случилось или какая услуга нужна?'), {
+    target: { value: 'The unit needs service' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Mock human verification' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Отправить заявку' }));
+
+  await screen.findByRole('alert');
+  fireEvent.click(screen.getByRole('button', { name: 'Mock human verification' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Отправить заявку' }));
+
+  await waitFor(() => expect(api.submitPublicLead).toHaveBeenCalledTimes(2));
+  expect(api.submitPublicLead.mock.calls[0][1])
+    .toBe(api.submitPublicLead.mock.calls[1][1]);
+  expect(await screen.findByText(/заявка принята/i)).toBeDefined();
+  vi.unstubAllEnvs();
+});
+
 test('submits an idempotent request and shows demo confirmation', async () => {
   vi.stubEnv('VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY', 'sitekey-demo');
   render(<PublicHvacDemo />);

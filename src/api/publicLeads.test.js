@@ -12,11 +12,27 @@ describe('public lead intake API', () => {
     expect(() => resolvePublicLeadsUrl({ configuredOrigin: '' }))
       .toThrow('Форма ещё не подключена к демо-сервису.');
     expect(resolvePublicLeadsUrl({
-      configuredOrigin: 'https://public-api.example.test/',
-    })).toBe('https://public-api.example.test/v1/public/leads');
+      configuredOrigin: 'https://demo-api.nvvai.site/',
+      browserHostname: 'demo.nvvai.site',
+    })).toBe('https://demo-api.nvvai.site/v1/public/leads');
     expect(() => resolvePublicLeadsUrl({
       configuredOrigin: 'http://public-api.example.test',
     })).toThrow(PublicLeadApiError);
+  });
+
+  test('does not accept the production API host or a cross-environment staging origin', () => {
+    expect(() => resolvePublicLeadsUrl({
+      configuredOrigin: 'https://api.nvvai.site',
+      browserHostname: 'demo.nvvai.site',
+    })).toThrow(PublicLeadApiError);
+    expect(() => resolvePublicLeadsUrl({
+      configuredOrigin: 'https://staging-api.nvvai.site',
+      browserHostname: 'demo.nvvai.site',
+    })).toThrow(PublicLeadApiError);
+    expect(resolvePublicLeadsUrl({
+      configuredOrigin: 'https://staging-api.nvvai.site',
+      browserHostname: 'staging-app.nvvai.site',
+    })).toBe('https://staging-api.nvvai.site/v1/public/leads');
   });
 
   test('sends tenant-neutral form data with an idempotency key and no cookies', async () => {
@@ -31,11 +47,15 @@ describe('public lead intake API', () => {
     await expect(submitPublicLead(
       { name: 'Alex', phone: '+15550100', turnstileToken: 'turnstile-token' },
       'a-valid-idempotency-key',
-      { configuredOrigin: 'https://public-api.example.test', fetchImpl }
+      {
+        configuredOrigin: 'https://demo-api.nvvai.site',
+        browserHostname: 'demo.nvvai.site',
+        fetchImpl,
+      }
     )).resolves.toMatchObject({ id: 'lead-1', status: 'new' });
 
     expect(fetchImpl).toHaveBeenCalledWith(
-      'https://public-api.example.test/v1/public/leads',
+      'https://demo-api.nvvai.site/v1/public/leads',
       expect.objectContaining({
         method: 'POST',
         credentials: 'omit',
@@ -56,7 +76,11 @@ describe('public lead intake API', () => {
     await expect(submitPublicLead(
       { name: 'Alex' },
       'a-valid-idempotency-key',
-      { configuredOrigin: 'https://public-api.example.test', fetchImpl }
+      {
+        configuredOrigin: 'https://demo-api.nvvai.site',
+        browserHostname: 'demo.nvvai.site',
+        fetchImpl,
+      }
     )).rejects.toMatchObject({
       name: 'PublicLeadApiError',
       status: 400,

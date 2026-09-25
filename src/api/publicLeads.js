@@ -11,6 +11,7 @@ export class PublicLeadApiError extends Error {
 
 export function resolvePublicLeadsUrl({
   configuredOrigin = import.meta.env?.VITE_PUBLIC_LEADS_API_BASE_URL ?? '',
+  browserHostname = globalThis.location?.hostname?.toLowerCase(),
 } = {}) {
   const origin = configuredOrigin.trim().replace(/\/+$/, '');
   if (!origin) {
@@ -24,8 +25,28 @@ export function resolvePublicLeadsUrl({
     throw new PublicLeadApiError('Форма ещё не подключена к демо-сервису.');
   }
 
+  const approvedDemoHosts = new Set([
+    'demo.nvvai.site',
+    'staging-app.nvvai.site',
+    'localhost',
+    '127.0.0.1',
+  ]);
   const localHttp = ['localhost', '127.0.0.1'].includes(parsed.hostname);
-  if (parsed.username || parsed.password || (parsed.protocol !== 'https:' && !(localHttp && parsed.protocol === 'http:'))) {
+  const allowedStagingApi =
+    browserHostname === 'staging-app.nvvai.site' &&
+    parsed.origin === 'https://staging-api.nvvai.site';
+  if (
+    (browserHostname && !approvedDemoHosts.has(browserHostname)) ||
+    (!allowedStagingApi &&
+      !localHttp &&
+      !(
+        browserHostname === 'demo.nvvai.site' &&
+        parsed.origin === 'https://demo-api.nvvai.site'
+      )) ||
+    parsed.username ||
+    parsed.password ||
+    (parsed.protocol !== 'https:' && !(localHttp && parsed.protocol === 'http:'))
+  ) {
     throw new PublicLeadApiError('Форма ещё не подключена к демо-сервису.');
   }
   return `${origin}${PUBLIC_LEADS_PATH}`;

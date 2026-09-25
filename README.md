@@ -10,8 +10,9 @@ production or staging hostname by the code change alone.
 
 The form remains unavailable until both public build-time settings are supplied:
 
-- `VITE_PUBLIC_LEADS_API_BASE_URL`: HTTPS API origin serving
-  `POST /v1/public/leads`.
+- For an approved demo-origin build, `VITE_PUBLIC_LEADS_API_BASE_URL` must be
+  exactly `https://demo-api.nvvai.site`. For a staging-origin build, the only
+  accepted value is `https://staging-api.nvvai.site`.
 - `VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY`: Cloudflare Turnstile **site key**,
   restricted in Cloudflare to the demo hostname.
 
