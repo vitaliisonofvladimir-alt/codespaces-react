@@ -85,7 +85,7 @@ The production Worker serves the Vite build from `dist` and handles
 `/api/chat`, `/api/agent`, and `/api/transcribe`. The OpenAI key remains a
 server-side Cloudflare secret.
 
-Add the secret once from an authenticated terminal:
+Add the chat secret once from an authenticated terminal:
 
 ```bash
 npx wrangler secret put OPENAI_API_KEY
@@ -95,7 +95,28 @@ This command securely uploads the value to Cloudflare; it does not write the
 key to the repository. For local Wrangler development, copy
 `.dev.vars.example` to `.dev.vars` and replace the placeholder.
 
-Build and deploy:
+### Public HVAC demo prerequisites
+
+The public route at `/demo/hvac` is independent of owner login. The client
+deliberately accepts only these API-origin pairs:
+
+| Browser host | API origin |
+| --- | --- |
+| `demo.nvvai.site` | `https://demo-api.nvvai.site` |
+| `staging-app.nvvai.site` | `https://staging-api.nvvai.site` |
+| `localhost` / `127.0.0.1` | Local development API (HTTP allowed) |
+
+The Turnstile **site key** is public and restricted to the chosen demo hostname;
+the Turnstile **secret key** is backend-only. Keep the server-side verification
+secret out of `VITE_*`, browser bundles, and Git. The server API must separately
+have `NVVAI_ENABLE_PUBLIC_LEAD_INTAKE=1`, migration
+`0008_public_lead_preferred_time` applied, and
+`NVVAI_CORS_ALLOWED_ORIGINS` set to the exact public frontend origin. No flag,
+database migration, DNS, Cloudflare, or runtime change is performed by this
+frontend PR.
+
+Build and deploy the production Worker (deployment is a separate, explicitly
+approved action):
 
 ```bash
 npm run deploy
