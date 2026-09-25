@@ -1,5 +1,8 @@
 import { useRef, useState } from 'react';
-import { submitPublicLead } from '../api/publicLeads';
+import {
+  resolvePublicLeadsUrl,
+  submitPublicLead,
+} from '../api/publicLeads';
 import OrbitLogo from './OrbitLogo';
 import TurnstileWidget from './TurnstileWidget';
 
@@ -26,6 +29,15 @@ function PublicHvacDemo() {
   const [submitting, setSubmitting] = useState(false);
   const keyForPayload = useRef(null);
   const siteKey = import.meta.env?.VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY ?? '';
+  const apiOrigin = import.meta.env?.VITE_PUBLIC_LEADS_API_BASE_URL ?? '';
+  const intakeConfigured = (() => {
+    try {
+      resolvePublicLeadsUrl({ configuredOrigin: apiOrigin });
+      return true;
+    } catch {
+      return false;
+    }
+  })();
 
   function update(field, value) {
     setForm((previous) => ({ ...previous, [field]: value }));
@@ -213,9 +225,9 @@ function PublicHvacDemo() {
             />
           </label>
 
-          {!siteKey ? (
+          {!siteKey || !intakeConfigured ? (
             <p className="demo-config-note" role="status">
-              Форма появится после подключения демонстрационной проверки безопасности.
+              Форма включится после настройки проверки безопасности и API для этой среды.
             </p>
           ) : (
             <TurnstileWidget
@@ -239,7 +251,7 @@ function PublicHvacDemo() {
           )}
           <button
             className="demo-submit"
-            disabled={!siteKey || turnstileUnavailable || submitting}
+            disabled={!siteKey || !intakeConfigured || turnstileUnavailable || submitting}
             type="submit"
           >
             {submitting ? 'Отправляем…' : 'Отправить заявку'}

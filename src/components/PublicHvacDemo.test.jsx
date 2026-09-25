@@ -3,8 +3,13 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import PublicHvacDemo from './PublicHvacDemo';
 
 const api = vi.hoisted(() => ({ submitPublicLead: vi.fn() }));
+const intakeConfig = vi.hoisted(() => ({ enabled: false }));
 
 vi.mock('../api/publicLeads', () => ({
+  resolvePublicLeadsUrl: vi.fn(() => {
+    if (!intakeConfig.enabled) throw new Error('API URL is not configured');
+    return 'https://demo-api.nvvai.site/v1/public/leads';
+  }),
   submitPublicLead: api.submitPublicLead,
 }));
 
@@ -18,6 +23,7 @@ vi.mock('./TurnstileWidget', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  intakeConfig.enabled = false;
   api.submitPublicLead.mockResolvedValue({
     id: 'lead-demo-1',
     status: 'new',
@@ -32,8 +38,20 @@ test('clearly marks the HVAC page as a demo and keeps intake unavailable without
   expect(api.submitPublicLead).not.toHaveBeenCalled();
 });
 
+test('keeps submission disabled when the Turnstile site key exists but the API origin does not', () => {
+  vi.stubEnv('VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY', 'sitekey-demo');
+  vi.stubEnv('VITE_PUBLIC_LEADS_API_BASE_URL', '');
+  render(<PublicHvacDemo />);
+  expect(screen.getByRole('button', { name: 'Отправить заявку' }).disabled).toBe(true);
+  expect(screen.getByRole('status').textContent)
+    .toMatch(/настройки проверки безопасности и API/i);
+  vi.unstubAllEnvs();
+});
+
 test('requires a contact method and verified challenge before submission', async () => {
   vi.stubEnv('VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY', 'sitekey-demo');
+  vi.stubEnv('VITE_PUBLIC_LEADS_API_BASE_URL', 'https://demo-api.nvvai.site');
+  intakeConfig.enabled = true;
   render(<PublicHvacDemo />);
   fireEvent.change(screen.getByLabelText('Как к тебе обращаться'), {
     target: { value: 'Alex' },
@@ -52,6 +70,8 @@ test('requires a contact method and verified challenge before submission', async
 
 test('keeps the idempotency key for a retry of the same submitted payload', async () => {
   vi.stubEnv('VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY', 'sitekey-demo');
+  vi.stubEnv('VITE_PUBLIC_LEADS_API_BASE_URL', 'https://demo-api.nvvai.site');
+  intakeConfig.enabled = true;
   api.submitPublicLead
     .mockRejectedValueOnce(new Error('Temporary network failure'))
     .mockResolvedValueOnce({ id: 'lead-demo-2', status: 'new' });
@@ -82,6 +102,8 @@ test('keeps the idempotency key for a retry of the same submitted payload', asyn
 
 test('submits an idempotent request and shows demo confirmation', async () => {
   vi.stubEnv('VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY', 'sitekey-demo');
+  vi.stubEnv('VITE_PUBLIC_LEADS_API_BASE_URL', 'https://demo-api.nvvai.site');
+  intakeConfig.enabled = true;
   render(<PublicHvacDemo />);
   fireEvent.change(screen.getByLabelText('Как к тебе обращаться'), {
     target: { value: 'Alex' },
