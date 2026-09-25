@@ -22,6 +22,7 @@ vi.mock('./api/auth', async () => {
 });
 
 beforeEach(() => {
+  window.history.replaceState({}, '', '/');
   window.location.hash = '';
   vi.clearAllMocks();
   authApi.getCurrentUser.mockResolvedValue({
@@ -40,6 +41,19 @@ beforeEach(() => {
     },
   });
   authApi.logout.mockResolvedValue(undefined);
+});
+
+test('renders public HVAC demo without requiring owner authentication', async () => {
+  window.history.replaceState({}, '', '/demo/hvac');
+  authApi.getCurrentUser.mockRejectedValue(new Error('auth must not be called'));
+
+  render(<App />);
+
+  expect(await screen.findByRole('heading', {
+    name: 'Комфорт начинается с простого разговора.',
+  })).toBeDefined();
+  expect(screen.getByText('ДЕМО-КОМПАНИЯ')).toBeDefined();
+  expect(authApi.getCurrentUser).not.toHaveBeenCalled();
 });
 
 test('renders the focused NVVAI welcome screen before the first message', async () => {

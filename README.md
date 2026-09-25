@@ -2,6 +2,27 @@
 
 React + Vite project configured for GitHub Codespaces with automated CI checks and dependency updates.
 
+## Public HVAC demo route
+
+The frontend includes an explicitly labeled public HVAC demonstration at
+`/demo/hvac`. This route bypasses owner authentication and is not enabled as a
+production or staging hostname by the code change alone.
+
+The form remains unavailable until both public build-time settings are supplied:
+
+- `VITE_PUBLIC_LEADS_API_BASE_URL`: HTTPS API origin serving
+  `POST /v1/public/leads`.
+- `VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY`: Cloudflare Turnstile **site key**,
+  restricted in Cloudflare to the demo hostname.
+
+The Turnstile **secret key** belongs only in the backend secret store. Never
+put it in a `VITE_*` variable, frontend source, Git, or a browser. The backend
+must separately have the public-intake flag enabled, migration
+`0008_public_lead_preferred_time` applied, and
+`NVVAI_CORS_ALLOWED_ORIGINS` restricted to the exact demo origin before this
+form can accept requests. This PR does not perform those setup or activation
+actions.
+
 ## 🚀 Tech Stack
 
 - React 18
