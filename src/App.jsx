@@ -10,6 +10,12 @@ import LeadsPage from './components/LeadsPage';
 import OrbitLogo from './components/OrbitLogo';
 import PublicHvacDemo from './components/PublicHvacDemo';
 
+const PUBLIC_SITE_HOSTS = new Set(['nvvai.site', 'www.nvvai.site']);
+
+export function isPublicSiteHost(hostname) {
+  return PUBLIC_SITE_HOSTS.has(hostname.toLowerCase());
+}
+
 const suggestions = [
   { label: 'Объясни сложную тему', prompt: 'Объясни сложную тему простыми словами', icon: '✦' },
   { label: 'Помоги с текстом', prompt: 'Помоги мне написать и улучшить текст', icon: 'Aa' },
@@ -333,9 +339,172 @@ function AppGate({ onAudioReady }) {
   return <ProtectedApp onAudioReady={onAudioReady} />;
 }
 
-function App({ onAudioReady }) {
-  if (window.location.pathname === '/demo/hvac') {
+function PublicChatApp() {
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [mode, setMode] = useState('chat');
+  const [recording, setRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+  async function startRecording() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Браузер не поддерживает доступ к микрофону.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size) audioChunksRef.current.push(event.data);
+      };
+      recorder.onstop = async () => {
+        const audio = new Blob(audioChunksRef.current, {
+          type: recorder.mimeType || 'audio/webm',
+        });
+        audioChunksRef.current = [];
+        if (!audio.size) return;
+        try {
+          const transcript = await transcribeRecording(audio);
+          setMessage(transcript);
+          setError('');
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      mediaStreamRef.current = stream;
+      recorder.start();
+      setRecording(true);
+      setError('');
+    } catch (err) {
+      setError(
+        err.name === 'NotAllowedError'
+          ? 'Доступ к микрофону запрещён.'
+          : err.message
+      );
+    }
+  }
+
+  function toggleRecording() {
+    if (!recording) {
+      void startRecording();
+      return;
+    }
+    mediaRecorderRef.current?.stop();
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaRecorderRef.current = null;
+    mediaStreamRef.current = null;
+    setRecording(false);
+  }
+
+  async function sendMessage(event) {
+    event.preventDefault();
+    const text = message.trim();
+    if (!text) return;
+    setMessage('');
+    setMessages((previous) => [...previous, { role: 'user', content: text }]);
+    setLoading(true);
+    setError('');
+    try {
+      const reply = await sendChatMessage(mode, text);
+      setMessages((previous) => [
+        ...previous,
+        { role: 'assistant', content: reply },
+      ]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const composer = (
+    <ChatInput
+      message={message}
+      setMessage={setMessage}
+      onSubmit={sendMessage}
+      loading={loading}
+      onStartRecording={toggleRecording}
+      recording={recording}
+    />
+  );
+
+  return (
+    <div className="App app-shell public-chat-shell">
+      <header className="app-nav">
+        <a aria-label="NVVAI" className="app-brand" href="/">
+          <OrbitLogo />
+          <span className="app-brand__name">NVVAI</span>
+        </a>
+        <div className="app-nav__meta">
+          <a className="owner-login-link" href="https://app.nvvai.site/">
+            Кабинет владельца
+          </a>
+        </div>
+      </header>
+      <main className="main-content">
+        {!messages.length ? (
+          <section className="welcome" aria-labelledby="welcome-title">
+            <div className="ambient-glow" />
+            <div className="welcome-copy">
+              <span className="eyebrow">Твой AI-помощник</span>
+              <h1 id="welcome-title">Чем я могу помочь?</h1>
+              <p>Задай вопрос голосом или текстом — отвечу ясно и по существу.</p>
+            </div>
+            <div className="welcome-composer">{composer}</div>
+            <div className="suggestions" aria-label="Примеры запросов">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion.label}
+                  type="button"
+                  className="suggestion-card"
+                  onClick={() => setMessage(suggestion.prompt)}
+                >
+                  <span className="suggestion-icon" aria-hidden="true">
+                    {suggestion.icon}
+                  </span>
+                  <span>{suggestion.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="conversation" aria-label="Диалог с NVVAI">
+            <div className="chat-mode-toolbar">
+              <ChatModeSelector mode={mode} setMode={setMode} />
+              <span>Mode: <strong>{mode === 'chat' ? 'Chat' : 'Agent'}</strong></span>
+            </div>
+            <ChatMessages messages={messages} loading={loading} />
+            <div className="chat-composer">{composer}</div>
+          </section>
+        )}
+      </main>
+      {error && <p className="error-message" role="alert">{error}</p>}
+      {!messages.length && (
+        <footer className="site-footer">
+          NVVAI может ошибаться. Проверяй важную информацию.
+        </footer>
+      )}
+    </div>
+  );
+}
+
+function App({ onAudioReady, hostname = window.location.hostname }) {
+  if (
+    window.location.pathname === '/demo/hvac'
+    || hostname === 'demo.nvvai.site'
+  ) {
     return <PublicHvacDemo />;
+  }
+
+  if (isPublicSiteHost(hostname)) {
+    return <PublicChatApp />;
   }
 
   return (

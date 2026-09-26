@@ -6,6 +6,7 @@ import {
   logout,
   buildAuthApiUrl,
   requestMagicLink,
+  PRODUCTION_API_ORIGIN,
   resolveAuthApiBaseUrl,
 } from './auth';
 
@@ -46,6 +47,17 @@ describe('Auth API client', () => {
     })).toThrow('Staging auth API origin must match the approved host');
     expect(buildAuthApiUrl('/me', { mode: 'staging' }))
       .toBe('https://staging-api.nvvai.site/v1/auth/me');
+  });
+
+  test('production mode uses the canonical production API origin', () => {
+    expect(resolveAuthApiBaseUrl({ mode: 'production' }))
+      .toBe(PRODUCTION_API_ORIGIN);
+    expect(buildAuthApiUrl('/me', { mode: 'production' }))
+      .toBe('https://api.nvvai.site/v1/auth/me');
+    expect(resolveAuthApiBaseUrl({
+      mode: 'production',
+      configuredOrigin: 'https://auth.example.test/',
+    })).toBe('https://auth.example.test');
   });
 
   test('requests a magic link with normalized email and an enumeration-safe response', async () => {

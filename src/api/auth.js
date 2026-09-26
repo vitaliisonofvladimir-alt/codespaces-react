@@ -1,5 +1,6 @@
 const AUTH_PATH = '/v1/auth';
 export const STAGING_API_ORIGIN = 'https://staging-api.nvvai.site';
+export const PRODUCTION_API_ORIGIN = 'https://api.nvvai.site';
 
 export function resolveAuthApiBaseUrl({
   mode = import.meta.env?.MODE ?? '',
@@ -11,7 +12,9 @@ export function resolveAuthApiBaseUrl({
     }
     return STAGING_API_ORIGIN;
   }
-  return configuredOrigin.replace(/\/$/, '');
+  const normalizedOrigin = configuredOrigin.replace(/\/$/, '');
+  if (normalizedOrigin) return normalizedOrigin;
+  return mode === 'production' ? PRODUCTION_API_ORIGIN : '';
 }
 
 export function buildAuthApiUrl(path = '', options) {
