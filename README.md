@@ -60,7 +60,9 @@ server calls the OpenAI Responses API.
 
 ## NVVAI authentication UI
 
-The application shell uses the owner-only, passwordless magic-link flow:
+The public `nvvai.site` and `www.nvvai.site` hosts render the public chat
+without bootstrapping owner authentication. The owner-only app remains protected
+by passwordless magic-link authentication on its dedicated app hostname:
 
 - `GET /v1/auth/me` restores the server-side session on first load;
 - `POST /v1/auth/magic-link/request` requests a one-time email link;
@@ -68,12 +70,15 @@ The application shell uses the owner-only, passwordless magic-link flow:
   HttpOnly session cookie;
 - `POST /v1/auth/logout` ends the session.
 
-For the dedicated staging build, run `npm run build:staging`; both clients use
-the fixed `https://staging-api.nvvai.site` origin in staging mode. Staging mode
-ignores browser-provided API-origin overrides. The staging API allowlist must contain only
-`https://staging-app.nvvai.site` and must support credentialed requests and
-preflight. Do not put Cloudflare Access Service Tokens, or any other
-credentials, into `VITE_*` variables: those values are shipped to the browser.
+Production auth requests use `https://api.nvvai.site` unless an explicit
+`VITE_AUTH_API_BASE_URL` is configured. For the dedicated staging build, run
+`npm run build:staging`; auth and leads clients use the fixed
+`https://staging-api.nvvai.site` origin in staging mode. Staging mode ignores
+browser-provided API-origin overrides. The production and staging API
+allowlists must separately contain the exact owner-app origin and support
+credentialed requests and preflight. Do not put Cloudflare Access Service
+Tokens, or any other credentials, into `VITE_*` variables: those values are
+shipped to the browser.
 
 The API resolves tenant identity from the server-side `Host`; the staging
 Tunnel must preserve the configured staging tenant Host. This code change does

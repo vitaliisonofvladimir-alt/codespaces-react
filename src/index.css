@@ -2536,3 +2536,15 @@ textarea {
     scroll-behavior: auto !important;
   }
 }
+
+.public-chat-shell .owner-login-link {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.public-chat-shell .owner-login-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

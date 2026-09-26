@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import App from './App';
+import App, { isPublicSiteHost } from './App';
 import { AuthApiError } from './api/auth';
 
 const authApi = vi.hoisted(() => ({
@@ -54,6 +54,35 @@ test('renders public HVAC demo without requiring owner authentication', async ()
   })).toBeDefined();
   expect(screen.getByText('ДЕМО-КОМПАНИЯ')).toBeDefined();
   expect(authApi.getCurrentUser).not.toHaveBeenCalled();
+});
+
+test('public production hosts render the chat without invoking owner auth', async () => {
+  authApi.getCurrentUser.mockRejectedValue(new Error('auth must not be called'));
+
+  render(<App hostname="nvvai.site" />);
+
+  expect(await screen.findByRole('heading', { name: /чем я могу помочь/i }))
+    .toBeDefined();
+  expect(screen.getByRole('link', { name: 'Кабинет владельца' }).getAttribute('href'))
+    .toBe('https://app.nvvai.site/');
+  expect(authApi.getCurrentUser).not.toHaveBeenCalled();
+});
+
+test('owner app hostname still enters the protected magic-link flow', async () => {
+  authApi.getCurrentUser.mockResolvedValue(null);
+
+  render(<App hostname="app.nvvai.site" />);
+
+  expect(await screen.findByRole('heading', { name: /войти по ссылке/i }))
+    .toBeDefined();
+  expect(authApi.getCurrentUser).toHaveBeenCalledTimes(1);
+});
+
+test('www production host is public; other hosts remain protected', () => {
+  expect(isPublicSiteHost('nvvai.site')).toBe(true);
+  expect(isPublicSiteHost('www.nvvai.site')).toBe(true);
+  expect(isPublicSiteHost('app.nvvai.site')).toBe(false);
+  expect(isPublicSiteHost('staging-app.nvvai.site')).toBe(false);
 });
 
 test('renders the focused NVVAI welcome screen before the first message', async () => {
