@@ -43,6 +43,17 @@ describe('Leads API client', () => {
       .toBe('https://staging-api.nvvai.site/v1/leads');
   });
 
+  test('production mode uses the API hostname when no override is configured', () => {
+    expect(resolveLeadsApiBaseUrl({
+      mode: 'production',
+      configuredOrigin: '',
+    })).toBe('https://api.nvvai.site');
+    expect(buildLeadsApiUrl('', {
+      mode: 'production',
+      configuredOrigin: '',
+    })).toBe('https://api.nvvai.site/v1/leads');
+  });
+
   test('creates, updates, and deletes a lead using the API contract', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce({
