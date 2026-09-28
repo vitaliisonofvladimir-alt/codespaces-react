@@ -1,5 +1,6 @@
 const LEADS_PATH = '/v1/leads';
 export const STAGING_LEADS_API_ORIGIN = 'https://staging-api.nvvai.site';
+export const PRODUCTION_LEADS_API_ORIGIN = 'https://api.nvvai.site';
 
 export function resolveLeadsApiBaseUrl({
   mode = import.meta.env?.MODE ?? '',
@@ -11,7 +12,8 @@ export function resolveLeadsApiBaseUrl({
     }
     return STAGING_LEADS_API_ORIGIN;
   }
-  return configuredOrigin.replace(/\/$/, '');
+  const normalizedOrigin = configuredOrigin.replace(/\/$/, '');
+  return normalizedOrigin || (mode === 'production' ? PRODUCTION_LEADS_API_ORIGIN : '');
 }
 
 export function buildLeadsApiUrl(path = '', options) {
