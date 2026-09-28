@@ -7,6 +7,7 @@ import { transcribeRecording } from './api/transcription';
 import ChatMessages from './components/ChatMessages';
 import AuthScreen from './components/AuthScreen';
 import LeadsPage from './components/LeadsPage';
+import WorkspacePage from './components/WorkspacePage';
 import OrbitLogo from './components/OrbitLogo';
 import PublicHvacDemo from './components/PublicHvacDemo';
 
@@ -25,7 +26,9 @@ const suggestions = [
 function ProtectedApp({ onAudioReady }) {
   const { user, logout, logoutErrorMessage } = useAuth();
   const [view, setView] = useState(() =>
-    window.location.hash === '#leads' ? 'leads' : 'chat'
+    ['leads', 'workspace'].includes(window.location.hash.slice(1))
+      ? window.location.hash.slice(1)
+      : 'chat'
   );
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -40,7 +43,8 @@ function ProtectedApp({ onAudioReady }) {
 
   useEffect(() => {
     function syncView() {
-      setView(window.location.hash === '#leads' ? 'leads' : 'chat');
+      const next = window.location.hash.slice(1);
+      setView(['leads', 'workspace'].includes(next) ? next : 'chat');
       setError('');
     }
 
@@ -49,7 +53,7 @@ function ProtectedApp({ onAudioReady }) {
   }, []);
 
   function navigate(nextView) {
-    const nextHash = nextView === 'leads' ? '#leads' : '#chat';
+    const nextHash = `#${nextView}`;
     if (window.location.hash !== nextHash) {
       window.history.pushState({}, '', nextHash);
     }
@@ -206,6 +210,14 @@ function ProtectedApp({ onAudioReady }) {
             Ассистент
           </button>
           <button
+            className={view === 'workspace' ? 'is-active' : ''}
+            onClick={() => navigate('workspace')}
+            type="button"
+          >
+            <span className="nav-link__indicator" />
+            Управление
+          </button>
+          <button
             className={view === 'leads' ? 'is-active' : ''}
             onClick={() => navigate('leads')}
             type="button"
@@ -245,6 +257,8 @@ function ProtectedApp({ onAudioReady }) {
 
       {view === 'leads' ? (
         <LeadsPage onSessionExpired={logout} />
+      ) : view === 'workspace' ? (
+        <WorkspacePage onSessionExpired={logout} />
       ) : (
         <main className="main-content">
           {!hasConversation ? (
