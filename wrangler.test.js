@@ -14,7 +14,7 @@ describe('Wrangler deployment configuration', () => {
       directory: './dist',
       binding: 'ASSETS',
       not_found_handling: 'single-page-application',
-      run_worker_first: ['/api/*'],
+      run_worker_first: ['/', '/demo/hvac', '/api/*'],
     });
   });
 

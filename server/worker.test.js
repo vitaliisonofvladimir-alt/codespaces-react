@@ -122,4 +122,49 @@ describe('Cloudflare Worker entry point', () => {
 
     expect(response).toBe(assetResponse);
   });
+
+  it('negotiates markdown for the public pages without serving the SPA shell', async () => {
+    const worker = createWorker();
+    const env = { ASSETS: { fetch: () => { throw new Error('Should not fetch HTML'); } } };
+
+    for (const path of ['/', '/demo/hvac']) {
+      const response = await worker.fetch(new Request(`https://nvvai.site${path}`, {
+        headers: { Accept: 'text/html, text/markdown;q=0.9' },
+      }), env);
+      const body = await response.text();
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Content-Type')).toContain('text/markdown');
+      expect(response.headers.get('Vary')).toBe('Accept');
+      expect(response.headers.get('Content-Signal')).toBe('ai-train=no, search=yes, ai-input=no');
+      expect(Number(response.headers.get('x-markdown-tokens'))).toBeGreaterThan(0);
+      expect(body).toMatch(/^# /);
+      expect(body).not.toContain('<html>');
+    }
+  });
+
+  it('keeps HTML as the default for browsers and declined markdown', async () => {
+    const worker = createWorker();
+    const env = { ASSETS: { fetch: async () => new Response('<html>NVVAI</html>', {
+      headers: { 'Content-Type': 'text/html' },
+    }) } };
+
+    for (const accept of [undefined, 'text/markdown;q=0, text/html']) {
+      const response = await worker.fetch(new Request('https://nvvai.site/', {
+        headers: accept ? { Accept: accept } : {},
+      }), env);
+      expect(response.headers.get('Content-Type')).toBe('text/html');
+      expect(response.headers.get('Vary')).toBe('Accept');
+      expect(await response.text()).toBe('<html>NVVAI</html>');
+    }
+  });
+
+  it('does not serve public-page markdown to the owner subdomain', async () => {
+    const worker = createWorker();
+    const env = { ASSETS: { fetch: async () => new Response('<html>Login</html>') } };
+    const response = await worker.fetch(new Request('https://app.nvvai.site/', {
+      headers: { Accept: 'text/markdown' },
+    }), env);
+    expect(await response.text()).toBe('<html>Login</html>');
+  });
 });
