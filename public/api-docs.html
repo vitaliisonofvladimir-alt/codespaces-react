@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NVVAI public site API</title>
+  <meta name="description" content="Documentation for the NVVAI public site chat and transcription endpoints.">
+  <style>
+    body { max-width: 48rem; margin: 2rem auto; padding: 0 1rem; font: 1rem/1.6 system-ui, sans-serif; color: #18243a; }
+    code, pre { background: #f1f5fa; border-radius: .3rem; }
+    code { padding: .1rem .25rem; } pre { padding: 1rem; overflow-x: auto; }
+    a { color: #1559ad; } h1, h2 { line-height: 1.25; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>NVVAI public site API</h1>
+    <p>These endpoints support the public chat interface. The machine-readable <a href="/openapi.json">OpenAPI specification</a> describes their requests and responses.</p>
+    <h2>Text responses</h2>
+    <p>Send <code>POST /api/chat</code> or <code>POST /api/agent</code> with <code>Content-Type: application/json</code> and a JSON body such as <code>{"message":"Hello"}</code>. Both currently return <code>{"reply":"..."}</code>. An empty message cannot be processed.</p>
+    <h2>Audio transcription</h2>
+    <p>Send <code>POST /api/transcribe</code> with the audio bytes as the body and a matching audio content type, such as <code>audio/webm</code>. The maximum recording size is 10 MiB. The JSON response contains a <code>text</code> string.</p>
+    <h2>Errors</h2>
+    <p>Errors are JSON objects with an <code>error</code> string. Audio exceeding the size limit receives HTTP 413; processing failures receive HTTP 500. These endpoints are intended for the public site and may change as its features evolve.</p>
+  </main>
+</body>
+</html>

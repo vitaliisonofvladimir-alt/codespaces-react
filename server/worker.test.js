@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { createWorker } from './worker.js';
 
 describe('Cloudflare Worker entry point', () => {
@@ -166,5 +167,29 @@ describe('Cloudflare Worker entry point', () => {
       headers: { Accept: 'text/markdown' },
     }), env);
     expect(await response.text()).toBe('<html>Login</html>');
+  });
+
+  it('publishes an API catalog with working specification and documentation links', async () => {
+    const worker = createWorker();
+    const request = new Request('https://nvvai.site/.well-known/api-catalog');
+    const response = await worker.fetch(request, {});
+    const catalog = await response.json();
+    const spec = JSON.parse(readFileSync('public/openapi.json', 'utf8'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toContain('application/linkset+json');
+    expect(response.headers.get('Link')).toContain('rel="api-catalog"');
+    expect(catalog.linkset).toHaveLength(3);
+    for (const entry of catalog.linkset) {
+      expect(spec.paths[new URL(entry.anchor).pathname]).toBeDefined();
+      expect(entry['service-desc'][0].href).toBe('https://nvvai.site/openapi.json');
+      expect(entry['service-doc'][0].href).toBe('https://nvvai.site/api-docs.html');
+    }
+    expect(readFileSync('public/api-docs.html', 'utf8')).toContain('NVVAI public site API');
+
+    const head = await worker.fetch(new Request(request.url, { method: 'HEAD' }), {});
+    expect(head.status).toBe(200);
+    expect(head.headers.get('Link')).toBe(response.headers.get('Link'));
+    expect(await head.text()).toBe('');
   });
 });

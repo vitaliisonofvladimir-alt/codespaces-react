@@ -25,6 +25,7 @@
     "run_worker_first": [
       "/",
       "/demo/hvac",
+      "/.well-known/api-catalog",
       "/api/*"
     ]
   },
