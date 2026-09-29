@@ -1,6 +1,6 @@
 const origin = 'https://nvvai.site';
 const spec = `${origin}/openapi.json`;
-const docs = `${origin}/api-docs.html`;
+const docs = `${origin}/api-docs`;
 
 export const apiCatalog = {
   linkset: ['/api/chat', '/api/agent', '/api/transcribe'].map((path) => ({
