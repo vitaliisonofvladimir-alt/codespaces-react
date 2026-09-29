@@ -1,6 +1,7 @@
 import { createChatCompletion } from './openai.js';
 import { transcribeAudio } from './transcription.js';
 import { acceptsMarkdown, markdownResponse, publicMarkdown } from './public-markdown.js';
+import { catalogResponse } from './api-catalog.js';
 
 const DEFAULT_MAX_AUDIO_SIZE = 10 * 1024 * 1024;
 const API_HEADERS = {
@@ -29,6 +30,14 @@ export function createWorker({
           status: 204,
           headers: API_HEADERS,
         });
+      }
+
+      if (
+        ['nvvai.site', 'www.nvvai.site'].includes(url.hostname) &&
+        url.pathname === '/.well-known/api-catalog' &&
+        ['GET', 'HEAD'].includes(request.method)
+      ) {
+        return catalogResponse({ head: request.method === 'HEAD' });
       }
 
       if (

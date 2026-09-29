@@ -1,0 +1,110 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NVVAI public site API",
+    "version": "1.0.0",
+    "description": "Endpoints used by the public NVVAI site for text responses and audio transcription."
+  },
+  "servers": [{ "url": "https://nvvai.site" }],
+  "paths": {
+    "/api/chat": {
+      "post": {
+        "summary": "Get a text response",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MessageRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/Reply" },
+          "500": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/agent": {
+      "post": {
+        "summary": "Get a text response in agent mode",
+        "description": "Currently uses the same server-side response flow as /api/chat.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MessageRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/Reply" },
+          "500": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/transcribe": {
+      "post": {
+        "summary": "Transcribe an audio recording",
+        "description": "Send the raw recording bytes (maximum 10 MiB), not multipart form data.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "audio/webm": { "schema": { "type": "string", "format": "binary" } },
+            "audio/ogg": { "schema": { "type": "string", "format": "binary" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transcription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["text"],
+                  "properties": { "text": { "type": "string" } }
+                }
+              }
+            }
+          },
+          "413": { "$ref": "#/components/responses/Error" },
+          "500": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MessageRequest": {
+        "type": "object",
+        "required": ["message"],
+        "properties": { "message": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "responses": {
+      "Reply": {
+        "description": "Generated response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["reply"],
+              "properties": { "reply": { "type": "string" } }
+            }
+          }
+        }
+      },
+      "Error": {
+        "description": "Request could not be processed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["error"],
+              "properties": { "error": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}
