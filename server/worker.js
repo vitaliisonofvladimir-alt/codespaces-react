@@ -1,5 +1,6 @@
 import { createChatCompletion } from './openai.js';
 import { transcribeAudio } from './transcription.js';
+import { acceptsMarkdown, markdownResponse, publicMarkdown } from './public-markdown.js';
 
 const DEFAULT_MAX_AUDIO_SIZE = 10 * 1024 * 1024;
 const API_HEADERS = {
@@ -91,6 +92,23 @@ export function createWorker({
 
       if (url.pathname.startsWith('/api/')) {
         return jsonResponse({ error: 'Not found' }, 404);
+      }
+
+      const publicPage = ['nvvai.site', 'www.nvvai.site'].includes(url.hostname)
+        ? publicMarkdown.get(url.pathname)
+        : null;
+      if (publicPage && ['GET', 'HEAD'].includes(request.method)) {
+        if (acceptsMarkdown(request.headers.get('Accept') || '')) {
+          return markdownResponse(publicPage, { head: request.method === 'HEAD' });
+        }
+        if (env.ASSETS) {
+          const asset = await env.ASSETS.fetch(request);
+          const headers = new Headers(asset.headers);
+          if (!headers.get('Vary')?.split(',').some((value) => value.trim().toLowerCase() === 'accept')) {
+            headers.append('Vary', 'Accept');
+          }
+          return new Response(asset.body, { status: asset.status, statusText: asset.statusText, headers });
+        }
       }
 
       if (env.ASSETS) {
