@@ -10,6 +10,7 @@ import LeadsPage from './components/LeadsPage';
 import WorkspacePage from './components/WorkspacePage';
 import OrbitLogo from './components/OrbitLogo';
 import PublicHvacDemo from './components/PublicHvacDemo';
+import { publicHvacDemoPath } from './publicRoutes';
 
 const PUBLIC_SITE_HOSTS = new Set(['nvvai.site', 'www.nvvai.site']);
 
@@ -511,7 +512,7 @@ function PublicChatApp() {
 
 function App({ onAudioReady, hostname = window.location.hostname }) {
   if (
-    window.location.pathname === '/demo/hvac'
+    window.location.pathname === publicHvacDemoPath
     || hostname === 'demo.nvvai.site'
   ) {
     return <PublicHvacDemo />;
