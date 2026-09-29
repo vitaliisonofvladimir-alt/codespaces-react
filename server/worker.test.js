@@ -183,7 +183,7 @@ describe('Cloudflare Worker entry point', () => {
     for (const entry of catalog.linkset) {
       expect(spec.paths[new URL(entry.anchor).pathname]).toBeDefined();
       expect(entry['service-desc'][0].href).toBe('https://nvvai.site/openapi.json');
-      expect(entry['service-doc'][0].href).toBe('https://nvvai.site/api-docs.html');
+      expect(entry['service-doc'][0].href).toBe('https://nvvai.site/api-docs');
     }
     expect(readFileSync('public/api-docs.html', 'utf8')).toContain('NVVAI public site API');
 
