@@ -2,6 +2,13 @@ const origin = 'https://nvvai.site';
 const spec = `${origin}/openapi.json`;
 const docs = `${origin}/api-docs`;
 
+export const homepageLinks = [
+  `<${origin}/.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json"`,
+  `<${spec}>; rel="service-desc"; type="application/json"`,
+  `<${docs}>; rel="service-doc"; type="text/html"`,
+  `<${spec}>; rel="describedby"; type="application/json"`,
+].join(', ');
+
 export const apiCatalog = {
   linkset: ['/api/chat', '/api/agent', '/api/transcribe'].map((path) => ({
     anchor: `${origin}${path}`,

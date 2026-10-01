@@ -1,7 +1,7 @@
 import { createChatCompletion } from './openai.js';
 import { transcribeAudio } from './transcription.js';
 import { acceptsMarkdown, markdownResponse, publicMarkdown } from './public-markdown.js';
-import { catalogResponse } from './api-catalog.js';
+import { catalogResponse, homepageLinks } from './api-catalog.js';
 
 const DEFAULT_MAX_AUDIO_SIZE = 10 * 1024 * 1024;
 const API_HEADERS = {
@@ -13,6 +13,17 @@ function jsonResponse(body, status = 200) {
   return Response.json(body, {
     status,
     headers: API_HEADERS,
+  });
+}
+
+function addHomepageLinks(response, pathname) {
+  if (pathname !== '/') return response;
+  const headers = new Headers(response.headers);
+  headers.append('Link', homepageLinks);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
   });
 }
 
@@ -108,7 +119,10 @@ export function createWorker({
         : null;
       if (publicPage && ['GET', 'HEAD'].includes(request.method)) {
         if (acceptsMarkdown(request.headers.get('Accept') || '')) {
-          return markdownResponse(publicPage, { head: request.method === 'HEAD' });
+          return addHomepageLinks(
+            markdownResponse(publicPage, { head: request.method === 'HEAD' }),
+            url.pathname
+          );
         }
         if (env.ASSETS) {
           const asset = await env.ASSETS.fetch(request);
@@ -116,7 +130,10 @@ export function createWorker({
           if (!headers.get('Vary')?.split(',').some((value) => value.trim().toLowerCase() === 'accept')) {
             headers.append('Vary', 'Accept');
           }
-          return new Response(asset.body, { status: asset.status, statusText: asset.statusText, headers });
+          return addHomepageLinks(
+            new Response(asset.body, { status: asset.status, statusText: asset.statusText, headers }),
+            url.pathname
+          );
         }
       }
 

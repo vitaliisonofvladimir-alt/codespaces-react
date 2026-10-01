@@ -169,6 +169,31 @@ describe('Cloudflare Worker entry point', () => {
     expect(await response.text()).toBe('<html>Login</html>');
   });
 
+  it('advertises discovery links on HTML and Markdown homepage GET and HEAD responses', async () => {
+    const worker = createWorker();
+    const env = { ASSETS: { fetch: async (request) => new Response(
+      request.method === 'HEAD' ? null : '<html>NVVAI</html>',
+      { headers: { 'Content-Type': 'text/html', Link: '</existing>; rel="alternate"' } }
+    ) } };
+    for (const hostname of ['nvvai.site', 'www.nvvai.site']) {
+      for (const method of ['GET', 'HEAD']) {
+        for (const accept of ['text/html', 'text/markdown']) {
+          const response = await worker.fetch(new Request(`https://${hostname}/`, {
+            method, headers: { Accept: accept },
+          }), env);
+          const link = response.headers.get('Link');
+          expect(response.status).toBe(200);
+          expect(link).toContain('<https://nvvai.site/.well-known/api-catalog>; rel="api-catalog"');
+          expect(link).toContain('<https://nvvai.site/openapi.json>; rel="service-desc"');
+          expect(link).toContain('<https://nvvai.site/api-docs>; rel="service-doc"');
+          expect(link).toContain('rel="describedby"');
+          if (accept === 'text/html') expect(link).toContain('</existing>; rel="alternate"');
+          if (method === 'HEAD') expect(await response.text()).toBe('');
+        }
+      }
+    }
+  });
+
   it('publishes an API catalog with working specification and documentation links', async () => {
     const worker = createWorker();
     const request = new Request('https://nvvai.site/.well-known/api-catalog');
