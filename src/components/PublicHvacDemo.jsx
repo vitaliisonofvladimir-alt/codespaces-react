@@ -4,6 +4,7 @@ import {
   submitPublicLead,
 } from '../api/publicLeads';
 import OrbitLogo from './OrbitLogo';
+import HvacAiChat from './HvacAiChat';
 import TurnstileWidget from './TurnstileWidget';
 
 function newIdempotencyKey() {
@@ -158,6 +159,8 @@ function PublicHvacDemo() {
           <p>Нужна проверка или сезонная профилактика?</p>
         </div>
       </section>
+
+      <HvacAiChat />
 
       <section className="demo-form-section" id="request" aria-labelledby="request-title">
         <div className="demo-form-intro">
