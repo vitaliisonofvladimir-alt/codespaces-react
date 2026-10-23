@@ -2548,3 +2548,24 @@ textarea {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+
+/* Isolated HVAC Azure assistant. No changes to the lead-intake form. */
+.hvac-ai-section { max-width: 1100px; margin: 0 auto; padding: 64px 22px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 36px; align-items: start; }
+.hvac-ai-intro h2 { font-size: clamp(30px, 4vw, 48px); line-height: 1.08; margin: 14px 0; }
+.hvac-ai-intro p { color: var(--muted); line-height: 1.6; }
+.hvac-ai-card { background: white; border: 1px solid #dce4ed; border-radius: 18px; padding: 20px; box-shadow: 0 12px 32px rgba(39, 68, 105, .07); }
+.hvac-ai-feed { display: flex; flex-direction: column; gap: 12px; min-height: 160px; max-height: 330px; overflow-y: auto; }
+.hvac-ai-message { max-width: 93%; border: 1px solid #e4eaf1; border-radius: 13px; padding: 11px 13px; background: #f5f8fc; }
+.hvac-ai-message--user { align-self: flex-end; background: #eaf2ff; }
+.hvac-ai-message strong { font-size: 11px; }
+.hvac-ai-message p { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.55; margin: 6px 0 0; }
+.hvac-ai-pending, .hvac-ai-note { color: #65758b; font-size: 12px; }
+.hvac-ai-error { color: #a22; font-size: 12px; }
+.hvac-ai-form { margin: 18px 0 10px; }
+.hvac-ai-form label { display: block; font-size: 12px; margin-bottom: 8px; }
+.hvac-ai-input-row { display: flex; gap: 8px; }
+.hvac-ai-input-row input { min-width: 0; flex: 1; padding: 12px; border: 1px solid #cfd8e3; border-radius: 9px; }
+.hvac-ai-input-row button { color: #fff; border: 0; border-radius: 9px; background: #0b57d0; padding: 0 15px; }
+.hvac-ai-input-row button:disabled { opacity: .55; }
+@media(max-width: 700px) { .hvac-ai-section { grid-template-columns: 1fr; padding: 45px 18px; gap: 20px; } }
