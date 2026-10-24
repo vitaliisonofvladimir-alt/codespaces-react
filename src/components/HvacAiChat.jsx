@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 const INITIAL = [{
   role: 'assistant',
-  content: 'Привет! Я тестовый AI-консультант NVVAI по кондиционерам и климатическим системам. Что тебя интересует: ремонт, установка или обслуживание?',
+  content: 'Здравствуйте! Я демонстрационный AI-администратор NVVAI. Какой мастер нужен: сантехник, электрик, ремонт техники, отопление или другая услуга? Помогу описать запрос и перейти к форме заявки.',
 }];
 
 export default function HvacAiChat() {
@@ -31,14 +31,14 @@ export default function HvacAiChat() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok || typeof result.reply !== 'string') {
         throw new Error(response.status === 503
-          ? 'AI-консультант ещё не подключён к Azure. Заявку можно отправить через форму ниже.'
+          ? 'AI-администратор ещё не подключён к Azure. Заявку можно отправить через форму ниже.'
           : response.status === 429
             ? 'Достигнут лимит запросов AI. Попробуй позже.'
-            : 'AI-консультант временно недоступен. Попробуй позже.');
+            : 'AI-администратор временно недоступен. Попробуй позже.');
       }
       setMessages(prev => [...prev, { role: 'assistant', content: result.reply.slice(0, 1600) }]);
     } catch (err) {
-      setError(err.message || 'Не удалось связаться с AI-консультантом.');
+      setError(err.message || 'Не удалось связаться с AI-администратором.');
     } finally {
       setPending(false);
     }
@@ -49,7 +49,7 @@ export default function HvacAiChat() {
       <div className="hvac-ai-intro">
         <span className="demo-eyebrow">AI-ПОМОЩНИК · MICROSOFT AZURE</span>
         <h2 id="hvac-ai-title">Сначала обсудим задачу</h2>
-        <p>Расскажи о климатической системе — помощник задаст уточняющие вопросы. Для заявки используй отдельную форму ниже.</p>
+        <p>Опиши, какой мастер или услуга нужны. AI поможет уточнить задачу, а заявку можно оставить через форму ниже.</p>
       </div>
       <div className="hvac-ai-card">
         <div className="hvac-ai-feed" role="log" aria-live="polite" aria-label="Диалог с AI">
@@ -63,12 +63,13 @@ export default function HvacAiChat() {
         </div>
         {error && <p className="hvac-ai-error" role="alert">{error}</p>}
         <form className="hvac-ai-form" onSubmit={send}>
-          <label htmlFor="hvac-ai-message">Вопрос о кондиционере или отоплении</label>
+          <label htmlFor="hvac-ai-message">Какой мастер или услуга нужны?</label>
           <div className="hvac-ai-input-row">
-            <input id="hvac-ai-message" value={draft} maxLength={600} onChange={e => setDraft(e.target.value)} placeholder="Например, кондиционер плохо охлаждает…" />
+            <input id="hvac-ai-message" value={draft} maxLength={600} onChange={e => setDraft(e.target.value)} placeholder="Например, протекает кран, нужен электрик…" />
             <button type="submit" disabled={pending || !draft.trim()}>Отправить</button>
           </div>
         </form>
+        <a className="hvac-ai-request-link" href="#request">Оставить заявку →</a>
         <small className="hvac-ai-note">AI может ошибаться. Не передавай пароли, платёжные данные или личные документы. Этот чат не создаёт заявку автоматически.</small>
       </div>
     </section>

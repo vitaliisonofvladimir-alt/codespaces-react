@@ -43,14 +43,14 @@ beforeEach(() => {
   authApi.logout.mockResolvedValue(undefined);
 });
 
-test('renders public HVAC demo without requiring owner authentication', async () => {
+test('renders public multi-service demo without requiring owner authentication', async () => {
   window.history.replaceState({}, '', '/demo/hvac');
   authApi.getCurrentUser.mockRejectedValue(new Error('auth must not be called'));
 
   render(<App />);
 
   expect(await screen.findByRole('heading', {
-    name: 'Комфорт начинается с простого разговора.',
+    name: 'Нужен мастер? Начни с простого разговора.',
   })).toBeDefined();
   expect(screen.getByText('ДЕМО-КОМПАНИЯ')).toBeDefined();
   expect(authApi.getCurrentUser).not.toHaveBeenCalled();

@@ -25,17 +25,19 @@ test('rejects oversized messages', async () => {
   expect(r.status).toBe(400);
   expect(fetchImpl).not.toHaveBeenCalled();
 });
-test('forwards valid HVAC chat only to pinned Azure endpoint with token budget', async () => {
+test('forwards multi-service chat to pinned Azure endpoint with token budget', async () => {
   const fetchImpl = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ output: [{ content: [{ type: 'output_text', text: 'Сколько лет системе?' }] }] }) });
-  const r = await request(createHvacAzureHandler({ apiKey: 'test', fetchImpl }), { message: 'Не холодит', history: [] });
+  const r = await request(createHvacAzureHandler({ apiKey: 'test', fetchImpl }), { message: 'Нужен электрик', history: [] });
   expect(r.status).toBe(200);
   expect((await r.json()).reply).toBe('Сколько лет системе?');
   expect(fetchImpl.mock.calls[0][0]).toBe(AZURE_ENDPOINT);
   const forwarded = JSON.parse(fetchImpl.mock.calls[0][1].body);
   expect(forwarded.max_output_tokens).toBe(250);
   expect(forwarded.store).toBe(false);
-  expect(forwarded.instructions).toContain('сантехнике или другой услуге');
-  expect(forwarded.instructions).toContain('тестовая заявка');
+  expect(forwarded.instructions).toContain('сантехнику, электрику');
+  expect(forwarded.instructions).toContain('Не ограничивай помощь отоплением или кондиционерами');
+  expect(forwarded.instructions).toContain('заявка тестовая');
+  expect(forwarded.instructions).toContain('наличие специалиста');
   expect(forwarded.instructions).toContain('не отказывать');
 });
 test('enforces per-minute request ceiling before calling model', async () => {
