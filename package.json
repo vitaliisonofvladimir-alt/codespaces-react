@@ -14,7 +14,8 @@
   },
   "overrides": {
     "@svgr/webpack": "^8.0.1",
-    "@adobe/css-tools": "^4.3.1"
+    "@adobe/css-tools": "^4.3.1",
+    "undici": "^8.12.3"
   },
   "scripts": {
     "start": "concurrently --kill-others-on-fail --names api,web \"npm run api\" \"npm run web\"",
