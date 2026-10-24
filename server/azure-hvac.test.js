@@ -34,6 +34,9 @@ test('forwards valid HVAC chat only to pinned Azure endpoint with token budget',
   const forwarded = JSON.parse(fetchImpl.mock.calls[0][1].body);
   expect(forwarded.max_output_tokens).toBe(250);
   expect(forwarded.store).toBe(false);
+  expect(forwarded.instructions).toContain('сантехнике или другой услуге');
+  expect(forwarded.instructions).toContain('тестовая заявка');
+  expect(forwarded.instructions).toContain('не отказывать');
 });
 test('enforces per-minute request ceiling before calling model', async () => {
   const fetchImpl = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ output: [{ content: [{ type: 'output_text', text: 'Хорошо' }] }] }) });
