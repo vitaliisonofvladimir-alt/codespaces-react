@@ -121,42 +121,41 @@ function PublicHvacDemo() {
 
       <section className="demo-hero" aria-labelledby="demo-title">
         <div className="demo-hero__copy">
-          <span className="demo-eyebrow">Демонстрация HVAC-сервиса</span>
-          <h1 id="demo-title">Комфорт начинается с простого разговора.</h1>
+          <span className="demo-eyebrow">Демонстрация сервиса для мастеров</span>
+          <h1 id="demo-title">Нужен мастер? Начни с простого разговора.</h1>
           <p>
-            Опиши, что нужно с климатической системой. Демонстрационная команда
-            свяжется с тобой, чтобы уточнить детали.
+            Сантехника, электрика, ремонт техники, монтаж и другие задачи.
+            Опиши, что случилось, и попробуй оформление тестовой заявки с AI.
           </p>
           <a className="demo-cta" href="#request">Оставить заявку <span aria-hidden="true">↓</span></a>
           <p className="demo-disclaimer">Это демонстрация продукта, не реальная служба обслуживания.</p>
         </div>
         <div className="demo-visual" aria-hidden="true">
           <div className="demo-visual__sun" />
-          <div className="demo-visual__unit">
-            <span className="demo-visual__vent" />
-            <span className="demo-visual__light" />
+          <div className="demo-visual__unit demo-visual__unit--services">
+            <span className="demo-visual__service-mark" aria-hidden="true">✦</span>
+            <strong>Нужен мастер?</strong>
+            <span>Опиши задачу — начни с заявки</span>
           </div>
-          <div className="demo-visual__air demo-visual__air--one" />
-          <div className="demo-visual__air demo-visual__air--two" />
-          <div className="demo-visual__caption">ДОМ · КОМФОРТ · КЛИМАТ</div>
+          <div className="demo-visual__caption">ДОМ · РЕМОНТ · СЕРВИС</div>
         </div>
       </section>
 
       <section className="demo-services" aria-label="Типовые запросы">
         <div>
           <span className="demo-service-icon" aria-hidden="true">↗</span>
-          <h2>Ремонт</h2>
-          <p>Система работает не так, как ожидается?</p>
+          <h2>Сантехника и электрика</h2>
+          <p>Протечка, розетки, освещение и другие задачи дома.</p>
         </div>
         <div>
           <span className="demo-service-icon" aria-hidden="true">＋</span>
-          <h2>Установка</h2>
-          <p>Планируешь установить или заменить оборудование?</p>
+          <h2>Монтаж и ремонт</h2>
+          <p>Бытовая техника, мебель, отделка и климатическое оборудование.</p>
         </div>
         <div>
           <span className="demo-service-icon" aria-hidden="true">◷</span>
-          <h2>Обслуживание</h2>
-          <p>Нужна проверка или сезонная профилактика?</p>
+          <h2>Другие специалисты</h2>
+          <p>Не нашёл свою услугу? Опиши запрос в заявке.</p>
         </div>
       </section>
 

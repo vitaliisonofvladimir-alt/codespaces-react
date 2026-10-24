@@ -30,10 +30,14 @@ beforeEach(() => {
   });
 });
 
-test('clearly marks the HVAC page as a demo and keeps intake unavailable without its site key', () => {
+test('clearly marks the multi-service page as a demo and keeps intake unavailable without its site key', () => {
   render(<PublicHvacDemo />);
   expect(screen.getByText('ДЕМО-КОМПАНИЯ')).toBeDefined();
   expect(screen.getByText(/не реальная служба обслуживания/i)).toBeDefined();
+  expect(screen.getByText('Сантехника и электрика')).toBeDefined();
+  expect(screen.getByText('Монтаж и ремонт')).toBeDefined();
+  expect(screen.getByText('Другие специалисты')).toBeDefined();
+  expect(screen.getByRole('heading', { name: /нужен мастер/i })).toBeDefined();
   expect(screen.getByRole('button', { name: 'Отправить заявку' }).disabled).toBe(true);
   expect(api.submitPublicLead).not.toHaveBeenCalled();
 });
