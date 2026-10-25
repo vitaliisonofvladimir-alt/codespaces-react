@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 const INITIAL = [{
   role: 'assistant',
-  content: 'Здравствуйте! Я демонстрационный AI-администратор NVVAI. Какой мастер нужен: сантехник, электрик, ремонт техники, отопление или другая услуга? Помогу описать запрос и перейти к форме заявки.',
+  content: 'Hello! I am the NVVAI demo assistant. Is this about heating, cooling, repairs, or another home service? I can help clarify your request before you use the form below.',
 }];
 
 export default function HvacAiChat() {
@@ -31,14 +31,14 @@ export default function HvacAiChat() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok || typeof result.reply !== 'string') {
         throw new Error(response.status === 503
-          ? 'AI-администратор ещё не подключён к Azure. Заявку можно отправить через форму ниже.'
+          ? 'The AI assistant is temporarily unavailable. Please use the sample form below.'
           : response.status === 429
-            ? 'Достигнут лимит запросов AI. Попробуй позже.'
-            : 'AI-администратор временно недоступен. Попробуй позже.');
+            ? 'Request limit reached. Try again later.'
+            : 'The AI assistant is temporarily unavailable.');
       }
       setMessages(prev => [...prev, { role: 'assistant', content: result.reply.slice(0, 1600) }]);
     } catch (err) {
-      setError(err.message || 'Не удалось связаться с AI-администратором.');
+      setError(err.message || 'Could not connect to the AI assistant.');
     } finally {
       setPending(false);
     }
@@ -47,30 +47,30 @@ export default function HvacAiChat() {
   return (
     <section className="hvac-ai-section" aria-labelledby="hvac-ai-title">
       <div className="hvac-ai-intro">
-        <span className="demo-eyebrow">AI-ПОМОЩНИК · MICROSOFT AZURE</span>
-        <h2 id="hvac-ai-title">Сначала обсудим задачу</h2>
-        <p>Опиши, какой мастер или услуга нужны. AI поможет уточнить задачу, а заявку можно оставить через форму ниже.</p>
+        <span className="demo-eyebrow">AI ASSISTANT · MICROSOFT AZURE</span>
+        <h2 id="hvac-ai-title">Tell us what needs attention</h2>
+        <p>Describe the problem. The AI can ask a clarifying question; submitting a sample request is a separate step below.</p>
       </div>
       <div className="hvac-ai-card">
-        <div className="hvac-ai-feed" role="log" aria-live="polite" aria-label="Диалог с AI">
+        <div className="hvac-ai-feed" role="log" aria-live="polite" aria-label="Conversation with AI">
           {messages.map((item, index) => (
             <div key={index} className={`hvac-ai-message hvac-ai-message--${item.role}`}>
-              <strong>{item.role === 'user' ? 'Ты' : 'NVVAI AI'}</strong>
+              <strong>{item.role === 'user' ? 'You' : 'NVVAI AI'}</strong>
               <p>{item.content}</p>
             </div>
           ))}
-          {pending && <p className="hvac-ai-pending" role="status">Формирую ответ…</p>}
+          {pending && <p className="hvac-ai-pending" role="status">Thinking…</p>}
         </div>
         {error && <p className="hvac-ai-error" role="alert">{error}</p>}
         <form className="hvac-ai-form" onSubmit={send}>
-          <label htmlFor="hvac-ai-message">Какой мастер или услуга нужны?</label>
+          <label htmlFor="hvac-ai-message">What service do you need?</label>
           <div className="hvac-ai-input-row">
-            <input id="hvac-ai-message" value={draft} maxLength={600} onChange={e => setDraft(e.target.value)} placeholder="Например, протекает кран, нужен электрик…" />
-            <button type="submit" disabled={pending || !draft.trim()}>Отправить</button>
+            <input id="hvac-ai-message" value={draft} maxLength={600} onChange={e => setDraft(e.target.value)} placeholder="For example, my AC is not cooling…" />
+            <button type="submit" disabled={pending || !draft.trim()}>Send</button>
           </div>
         </form>
-        <a className="hvac-ai-request-link" href="#request">Оставить заявку →</a>
-        <small className="hvac-ai-note">AI может ошибаться. Не передавай пароли, платёжные данные или личные документы. Этот чат не создаёт заявку автоматически.</small>
+        <a className="hvac-ai-request-link" href="#request">Submit sample request →</a>
+        <small className="hvac-ai-note">AI can make mistakes. This chat does not create a request automatically; please use the separate form.</small>
       </div>
     </section>
   );
