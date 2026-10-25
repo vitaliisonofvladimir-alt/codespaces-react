@@ -15,14 +15,14 @@ export function resolvePublicLeadsUrl({
 } = {}) {
   const origin = configuredOrigin.trim().replace(/\/+$/, '');
   if (!origin) {
-    throw new PublicLeadApiError('Форма ещё не подключена к демо-сервису.');
+    throw new PublicLeadApiError('The demo form is not connected yet.');
   }
 
   let parsed;
   try {
     parsed = new URL(origin);
   } catch {
-    throw new PublicLeadApiError('Форма ещё не подключена к демо-сервису.');
+    throw new PublicLeadApiError('The demo form is not connected yet.');
   }
 
   const approvedDemoHosts = new Set([
@@ -47,14 +47,14 @@ export function resolvePublicLeadsUrl({
     parsed.password ||
     (parsed.protocol !== 'https:' && !(localHttp && parsed.protocol === 'http:'))
   ) {
-    throw new PublicLeadApiError('Форма ещё не подключена к демо-сервису.');
+    throw new PublicLeadApiError('The demo form is not connected yet.');
   }
   return `${origin}${PUBLIC_LEADS_PATH}`;
 }
 
 export async function submitPublicLead(input, idempotencyKey, options = {}) {
   if (typeof idempotencyKey !== 'string' || idempotencyKey.length < 16) {
-    throw new PublicLeadApiError('Не удалось безопасно отправить заявку.');
+    throw new PublicLeadApiError('Cannot submit the request securely.');
   }
 
   let response;
@@ -75,35 +75,35 @@ export async function submitPublicLead(input, idempotencyKey, options = {}) {
     );
   } catch (error) {
     if (error?.name === 'AbortError') {
-      throw new PublicLeadApiError('Не удалось отправить заявку. Попробуй ещё раз.');
+      throw new PublicLeadApiError('Could not send the request. Please try again.');
     }
-    throw new PublicLeadApiError('Не удалось связаться с демо-сервисом. Попробуй ещё раз.');
+    throw new PublicLeadApiError('Could not reach the demo service. Please try again.');
   }
 
   let data;
   try {
     data = await response.json();
   } catch {
-    throw new PublicLeadApiError('Демо-сервис вернул неожиданный ответ.');
+    throw new PublicLeadApiError('The demo service returned an unexpected response.');
   }
 
   if (!response.ok) {
     const messages = {
-      invalid_human_verification: 'Проверка безопасности истекла. Подтверди её ещё раз.',
-      idempotency_conflict: 'Данные заявки изменились. Отправь форму ещё раз.',
-      rate_limited: 'Слишком много заявок. Подожди немного и попробуй снова.',
-      tenant_not_found: 'Демо-компания временно недоступна.',
-      public_intake_unavailable: 'Форма временно недоступна. Попробуй позже.',
-      invalid_public_lead: 'Проверь имя и контактные данные.',
+      invalid_human_verification: 'Security verification expired. Please complete it again.',
+      idempotency_conflict: 'Request details changed. Please submit again.',
+      rate_limited: 'Too many requests. Please try again later.',
+      tenant_not_found: 'The demo company is temporarily unavailable.',
+      public_intake_unavailable: 'The form is temporarily unavailable.',
+      invalid_public_lead: 'Please check your name and contact details.',
     };
     throw new PublicLeadApiError(
-      messages[data?.error] ?? 'Не удалось отправить заявку. Попробуй позже.',
+      messages[data?.error] ?? 'Could not send the request. Please try again later.',
       { status: response.status, code: data?.error }
     );
   }
 
   if (!data?.lead?.id) {
-    throw new PublicLeadApiError('Демо-сервис вернул неожиданный ответ.');
+    throw new PublicLeadApiError('The demo service returned an unexpected response.');
   }
   return data.lead;
 }
