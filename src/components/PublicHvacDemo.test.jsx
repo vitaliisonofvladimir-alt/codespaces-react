@@ -48,7 +48,7 @@ test('keeps submission disabled when the Turnstile site key exists but the API o
   render(<PublicHvacDemo />);
   expect(screen.getByRole('button', { name: 'Submit sample request' }).disabled).toBe(true);
   expect(screen.getByRole('status').textContent)
-    .toMatch(/настройки проверки безопасности и API/i);
+    .toMatch(/security verification and the demo API/i);
   vi.unstubAllEnvs();
 });
 
@@ -60,7 +60,7 @@ test('requires a contact method and verified challenge before submission', async
   fireEvent.change(screen.getByLabelText('Your name'), {
     target: { value: 'Alex' },
   });
-  fireEvent.change(screen.getByLabelText('What service do you need?'), {
+  fireEvent.change(screen.getByLabelText('Describe your service request'), {
     target: { value: 'The unit needs service' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Mock human verification' }));
@@ -87,7 +87,7 @@ test('keeps the idempotency key for a retry of the same submitted payload', asyn
   fireEvent.change(screen.getByLabelText('Phone'), {
     target: { value: '+15550100' },
   });
-  fireEvent.change(screen.getByLabelText('What service do you need?'), {
+  fireEvent.change(screen.getByLabelText('Describe your service request'), {
     target: { value: 'The unit needs service' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Mock human verification' }));
@@ -115,7 +115,7 @@ test('submits an idempotent request and shows demo confirmation', async () => {
   fireEvent.change(screen.getByLabelText('Phone'), {
     target: { value: '+15550100' },
   });
-  fireEvent.change(screen.getByLabelText('What service do you need?'), {
+  fireEvent.change(screen.getByLabelText('Describe your service request'), {
     target: { value: 'The unit needs service' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Mock human verification' }));
