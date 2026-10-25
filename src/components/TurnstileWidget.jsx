@@ -76,9 +76,9 @@ export default function TurnstileWidget({
 
   return (
     <div className="demo-turnstile">
-      <div ref={containerRef} aria-label="Проверка безопасности" />
+      <div ref={containerRef} aria-label="Security verification" />
       {loadError && (
-        <p role="alert">Не удалось загрузить проверку. Обнови страницу.</p>
+        <p role="alert">Could not load verification. Please refresh the page.</p>
       )}
     </div>
   );
