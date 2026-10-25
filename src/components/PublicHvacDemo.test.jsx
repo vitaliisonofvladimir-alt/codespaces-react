@@ -67,7 +67,7 @@ test('requires a contact method and verified challenge before submission', async
   fireEvent.click(screen.getByRole('button', { name: 'Submit sample request' }));
 
   expect(screen.getByRole('alert').textContent)
-    .toMatch(/телефон или email/i);
+    .toMatch(/phone number or email/i);
   expect(api.submitPublicLead).not.toHaveBeenCalled();
   vi.unstubAllEnvs();
 });
