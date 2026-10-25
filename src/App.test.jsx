@@ -50,9 +50,9 @@ test('renders public multi-service demo without requiring owner authentication',
   render(<App />);
 
   expect(await screen.findByRole('heading', {
-    name: 'Нужен мастер? Начни с простого разговора.',
+    name: 'Make service requests easier to handle.',
   })).toBeDefined();
-  expect(screen.getByText('ДЕМО-КОМПАНИЯ')).toBeDefined();
+  expect(screen.getByText('DEMO COMPANY')).toBeDefined();
   expect(authApi.getCurrentUser).not.toHaveBeenCalled();
 });
 

@@ -32,13 +32,13 @@ beforeEach(() => {
 
 test('clearly marks the multi-service page as a demo and keeps intake unavailable without its site key', () => {
   render(<PublicHvacDemo />);
-  expect(screen.getByText('ДЕМО-КОМПАНИЯ')).toBeDefined();
-  expect(screen.getByText(/не реальная служба обслуживания/i)).toBeDefined();
-  expect(screen.getByText('Сантехника и электрика')).toBeDefined();
-  expect(screen.getByText('Монтаж и ремонт')).toBeDefined();
-  expect(screen.getByText('Другие специалисты')).toBeDefined();
-  expect(screen.getByRole('heading', { name: /нужен мастер/i })).toBeDefined();
-  expect(screen.getByRole('button', { name: 'Отправить заявку' }).disabled).toBe(true);
+  expect(screen.getByText('DEMO COMPANY')).toBeDefined();
+  expect(screen.getByText(/No real service appointment/i)).toBeDefined();
+  expect(screen.getByText('Heating and cooling')).toBeDefined();
+  expect(screen.getByText('Installation and repair')).toBeDefined();
+  expect(screen.getByText('Other home services')).toBeDefined();
+  expect(screen.getByRole('heading', { name: /Make service requests easier/i })).toBeDefined();
+  expect(screen.getByRole('button', { name: 'Submit sample request' }).disabled).toBe(true);
   expect(api.submitPublicLead).not.toHaveBeenCalled();
 });
 
@@ -46,9 +46,9 @@ test('keeps submission disabled when the Turnstile site key exists but the API o
   vi.stubEnv('VITE_PUBLIC_HVAC_TURNSTILE_SITE_KEY', 'sitekey-demo');
   vi.stubEnv('VITE_PUBLIC_LEADS_API_BASE_URL', '');
   render(<PublicHvacDemo />);
-  expect(screen.getByRole('button', { name: 'Отправить заявку' }).disabled).toBe(true);
+  expect(screen.getByRole('button', { name: 'Submit sample request' }).disabled).toBe(true);
   expect(screen.getByRole('status').textContent)
-    .toMatch(/настройки проверки безопасности и API/i);
+    .toMatch(/security verification and the demo API/i);
   vi.unstubAllEnvs();
 });
 
@@ -57,17 +57,17 @@ test('requires a contact method and verified challenge before submission', async
   vi.stubEnv('VITE_PUBLIC_LEADS_API_BASE_URL', 'https://demo-api.nvvai.site');
   intakeConfig.enabled = true;
   render(<PublicHvacDemo />);
-  fireEvent.change(screen.getByLabelText('Как к тебе обращаться'), {
+  fireEvent.change(screen.getByLabelText('Your name'), {
     target: { value: 'Alex' },
   });
-  fireEvent.change(screen.getByLabelText('Что случилось или какая услуга нужна?'), {
+  fireEvent.change(screen.getByLabelText('Describe your service request'), {
     target: { value: 'The unit needs service' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Mock human verification' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Отправить заявку' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Submit sample request' }));
 
   expect(screen.getByRole('alert').textContent)
-    .toMatch(/телефон или email/i);
+    .toMatch(/phone number or email/i);
   expect(api.submitPublicLead).not.toHaveBeenCalled();
   vi.unstubAllEnvs();
 });
@@ -81,26 +81,26 @@ test('keeps the idempotency key for a retry of the same submitted payload', asyn
     .mockResolvedValueOnce({ id: 'lead-demo-2', status: 'new' });
   render(<PublicHvacDemo />);
 
-  fireEvent.change(screen.getByLabelText('Как к тебе обращаться'), {
+  fireEvent.change(screen.getByLabelText('Your name'), {
     target: { value: 'Alex' },
   });
-  fireEvent.change(screen.getByLabelText('Телефон'), {
+  fireEvent.change(screen.getByLabelText('Phone'), {
     target: { value: '+15550100' },
   });
-  fireEvent.change(screen.getByLabelText('Что случилось или какая услуга нужна?'), {
+  fireEvent.change(screen.getByLabelText('Describe your service request'), {
     target: { value: 'The unit needs service' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Mock human verification' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Отправить заявку' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Submit sample request' }));
 
   await screen.findByRole('alert');
   fireEvent.click(screen.getByRole('button', { name: 'Mock human verification' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Отправить заявку' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Submit sample request' }));
 
   await waitFor(() => expect(api.submitPublicLead).toHaveBeenCalledTimes(2));
   expect(api.submitPublicLead.mock.calls[0][1])
     .toBe(api.submitPublicLead.mock.calls[1][1]);
-  expect(await screen.findByText(/заявка принята/i)).toBeDefined();
+  expect(await screen.findByText(/Sample request received/i)).toBeDefined();
   vi.unstubAllEnvs();
 });
 
@@ -109,17 +109,17 @@ test('submits an idempotent request and shows demo confirmation', async () => {
   vi.stubEnv('VITE_PUBLIC_LEADS_API_BASE_URL', 'https://demo-api.nvvai.site');
   intakeConfig.enabled = true;
   render(<PublicHvacDemo />);
-  fireEvent.change(screen.getByLabelText('Как к тебе обращаться'), {
+  fireEvent.change(screen.getByLabelText('Your name'), {
     target: { value: 'Alex' },
   });
-  fireEvent.change(screen.getByLabelText('Телефон'), {
+  fireEvent.change(screen.getByLabelText('Phone'), {
     target: { value: '+15550100' },
   });
-  fireEvent.change(screen.getByLabelText('Что случилось или какая услуга нужна?'), {
+  fireEvent.change(screen.getByLabelText('Describe your service request'), {
     target: { value: 'The unit needs service' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Mock human verification' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Отправить заявку' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Submit sample request' }));
 
   await waitFor(() => expect(api.submitPublicLead).toHaveBeenCalledTimes(1));
   const [payload, idempotencyKey] = api.submitPublicLead.mock.calls[0];

@@ -34,11 +34,11 @@ test('forwards multi-service chat to pinned Azure endpoint with token budget', a
   const forwarded = JSON.parse(fetchImpl.mock.calls[0][1].body);
   expect(forwarded.max_output_tokens).toBe(250);
   expect(forwarded.store).toBe(false);
-  expect(forwarded.instructions).toContain('сантехнику, электрику');
-  expect(forwarded.instructions).toContain('Не ограничивай помощь отоплением или кондиционерами');
-  expect(forwarded.instructions).toContain('заявка тестовая');
-  expect(forwarded.instructions).toContain('наличие специалиста');
-  expect(forwarded.instructions).toContain('не отказывать');
+  expect(forwarded.instructions).toContain('plumbing, electrical');
+  expect(forwarded.instructions).toContain('never reject a request simply because it is not HVAC');
+  expect(forwarded.instructions).toContain('website is a demo');
+  expect(forwarded.instructions).toContain('service availability');
+  expect(forwarded.instructions).toContain('Help the visitor');
 });
 test('enforces per-minute request ceiling before calling model', async () => {
   const fetchImpl = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ output: [{ content: [{ type: 'output_text', text: 'Хорошо' }] }] }) });

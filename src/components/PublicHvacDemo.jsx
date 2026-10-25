@@ -59,11 +59,11 @@ function PublicHvacDemo() {
       turnstileToken,
     };
     if (!normalized.phone && !normalized.email) {
-      setError('Оставь телефон или email — как тебе удобнее.');
+      setError('Please provide a phone number or email address.');
       return;
     }
     if (!turnstileToken) {
-      setError('Сначала пройди проверку безопасности.');
+      setError('Please complete the security check.');
       return;
     }
 
@@ -76,7 +76,7 @@ function PublicHvacDemo() {
         };
       }
     } catch {
-      setError('Безопасная отправка недоступна в этом браузере.');
+      setError('Secure submission is unavailable in this browser.');
       return;
     }
 
@@ -116,46 +116,45 @@ function PublicHvacDemo() {
           <OrbitLogo />
           <span>NVVAI</span>
         </a>
-        <span className="demo-label"><span /> ДЕМО-КОМПАНИЯ</span>
+        <span className="demo-label"><span /> DEMO COMPANY</span>
       </header>
 
       <section className="demo-hero" aria-labelledby="demo-title">
         <div className="demo-hero__copy">
-          <span className="demo-eyebrow">Демонстрация сервиса для мастеров</span>
-          <h1 id="demo-title">Нужен мастер? Начни с простого разговора.</h1>
+          <span className="demo-eyebrow">AI Intake Demo for HVAC & Home Services</span>
+          <h1 id="demo-title">Make service requests easier to handle.</h1>
           <p>
-            Сантехника, электрика, ремонт техники, монтаж и другие задачи.
-            Опиши, что случилось, и попробуй оформление тестовой заявки с AI.
+            From HVAC repair to other home services, describe the issue, ask the AI assistant a question, and submit a sample service request.
           </p>
-          <a className="demo-cta" href="#request">Оставить заявку <span aria-hidden="true">↓</span></a>
-          <p className="demo-disclaimer">Это демонстрация продукта, не реальная служба обслуживания.</p>
+          <a className="demo-cta" href="#request">Submit a request <span aria-hidden="true">↓</span></a>
+          <p className="demo-disclaimer">Product demo only. No real service appointment will be booked.</p>
         </div>
         <div className="demo-visual" aria-hidden="true">
           <div className="demo-visual__sun" />
           <div className="demo-visual__unit demo-visual__unit--services">
             <span className="demo-visual__service-mark" aria-hidden="true">✦</span>
-            <strong>Нужен мастер?</strong>
-            <span>Опиши задачу — начни с заявки</span>
+            <strong>Need service?</strong>
+            <span>Tell us what you need</span>
           </div>
-          <div className="demo-visual__caption">ДОМ · РЕМОНТ · СЕРВИС</div>
+          <div className="demo-visual__caption">HOME · HVAC · SERVICE</div>
         </div>
       </section>
 
-      <section className="demo-services" aria-label="Типовые запросы">
+      <section className="demo-services" aria-label="Common service requests">
         <div>
           <span className="demo-service-icon" aria-hidden="true">↗</span>
-          <h2>Сантехника и электрика</h2>
-          <p>Протечка, розетки, освещение и другие задачи дома.</p>
+          <h2>Heating and cooling</h2>
+          <p>AC problems, heating repairs, and seasonal maintenance.</p>
         </div>
         <div>
           <span className="demo-service-icon" aria-hidden="true">＋</span>
-          <h2>Монтаж и ремонт</h2>
-          <p>Бытовая техника, мебель, отделка и климатическое оборудование.</p>
+          <h2>Installation and repair</h2>
+          <p>System replacement, installation quotes, and related repairs.</p>
         </div>
         <div>
           <span className="demo-service-icon" aria-hidden="true">◷</span>
-          <h2>Другие специалисты</h2>
-          <p>Не нашёл свою услугу? Опиши запрос в заявке.</p>
+          <h2>Other home services</h2>
+          <p>Plumbing, electrical, appliance repair, and more.</p>
         </div>
       </section>
 
@@ -163,13 +162,13 @@ function PublicHvacDemo() {
 
       <section className="demo-form-section" id="request" aria-labelledby="request-title">
         <div className="demo-form-intro">
-          <span className="demo-eyebrow">Заявка занимает около минуты</span>
-          <h2 id="request-title">Расскажи, чем помочь</h2>
-          <p>Оставь контакт и краткое описание. Можно указать удобное время для связи.</p>
+          <span className="demo-eyebrow">About one minute</span>
+          <h2 id="request-title">Tell us about your request</h2>
+          <p>Share your contact information and a short description. You may suggest a preferred time for a follow-up.</p>
         </div>
         <form className="demo-form" onSubmit={submit}>
           <label>
-            <span>Как к тебе обращаться</span>
+            <span>Your name</span>
             <input
               autoComplete="name"
               maxLength={200}
@@ -181,7 +180,7 @@ function PublicHvacDemo() {
           </label>
           <div className="demo-form__row">
             <label>
-              <span>Телефон</span>
+              <span>Phone</span>
               <input
                 autoComplete="tel"
                 inputMode="tel"
@@ -207,7 +206,7 @@ function PublicHvacDemo() {
             </label>
           </div>
           <label>
-            <span>Что случилось или какая услуга нужна?</span>
+            <span>Describe your service request</span>
             <textarea
               maxLength={4000}
               name="description"
@@ -218,7 +217,7 @@ function PublicHvacDemo() {
             />
           </label>
           <label>
-            <span>Удобное время для связи <em>необязательно</em></span>
+            <span>Preferred contact time <em>optional</em></span>
             <input
               name="preferredAt"
               onChange={(event) => update('preferredAt', event.target.value)}
@@ -229,7 +228,7 @@ function PublicHvacDemo() {
 
           {!siteKey || !intakeConfigured ? (
             <p className="demo-config-note" role="status">
-              Форма включится после настройки проверки безопасности и API для этой среды.
+              This form is unavailable until security verification and the demo API are configured.
             </p>
           ) : (
             <TurnstileWidget
@@ -243,12 +242,12 @@ function PublicHvacDemo() {
           {error && <p className="demo-form-error" role="alert">{error}</p>}
           {turnstileUnavailable && (
             <p className="demo-form-error" role="alert">
-              Проверка безопасности пока недоступна. Обнови страницу позже.
+              Security verification is unavailable. Please try again later.
             </p>
           )}
           {sent && (
             <p className="demo-form-success" role="status">
-              Заявка принята. Спасибо — это демонстрационный сценарий.
+              Sample request received. This is a demo, not a confirmed appointment.
             </p>
           )}
           <button
@@ -256,18 +255,17 @@ function PublicHvacDemo() {
             disabled={!siteKey || !intakeConfigured || turnstileUnavailable || submitting}
             type="submit"
           >
-            {submitting ? 'Отправляем…' : 'Отправить заявку'}
+            {submitting ? 'Submitting…' : 'Submit sample request'}
           </button>
           <small className="demo-privacy-note">
-            Не указывай платёжные данные или пароли. Эта демо-форма собирает только
-            сведения, нужные для обратной связи.
+            Do not enter payment details or passwords. This demo collects only the contact details required for follow-up.
           </small>
         </form>
       </section>
 
       <footer className="demo-footer">
         <span className="demo-brand"><OrbitLogo /><span>NVVAI</span></span>
-        <span>Явно обозначенная демонстрация · Без реального заказа</span>
+        <span>Demonstration only · No real booking</span>
       </footer>
     </main>
   );

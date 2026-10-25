@@ -11,10 +11,10 @@ describe('Multi-service Azure chat', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     render(<HvacAiChat />);
-    expect(screen.getByText(/сантехник, электрик, ремонт техники/i)).toBeTruthy();
-    expect(screen.getByRole('link', { name: /оставить заявку/i }).getAttribute('href')).toBe('#request');
-    fireEvent.change(screen.getByLabelText('Какой мастер или услуга нужны?'), { target: { value: '  Кондиционер не охлаждает  ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Отправить' }));
+    expect(screen.getByText(/heating, cooling, repairs/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /submit sample request/i }).getAttribute('href')).toBe('#request');
+    fireEvent.change(screen.getByLabelText('What service do you need?'), { target: { value: '  Кондиционер не охлаждает  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => expect(screen.getByText('Когда началась проблема?')).toBeTruthy());
     expect(fetchMock).toHaveBeenCalledWith('/api/hvac-chat', expect.objectContaining({
       method: 'POST', credentials: 'omit',
@@ -25,8 +25,8 @@ describe('Multi-service Azure chat', () => {
   test('reports unavailable Azure without affecting the lead form', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({ error: 'model_unavailable' }) }));
     render(<HvacAiChat />);
-    fireEvent.change(screen.getByLabelText('Какой мастер или услуга нужны?'), { target: { value: 'Нужна диагностика' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Отправить' }));
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('не подключён к Azure'));
+    fireEvent.change(screen.getByLabelText('What service do you need?'), { target: { value: 'Нужна диагностика' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('temporarily unavailable'));
   });
 });
