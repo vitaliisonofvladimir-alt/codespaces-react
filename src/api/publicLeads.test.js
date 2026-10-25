@@ -10,7 +10,7 @@ describe('public lead intake API', () => {
 
   test('requires an explicit HTTPS API origin and builds the public route', () => {
     expect(() => resolvePublicLeadsUrl({ configuredOrigin: '' }))
-      .toThrow('Форма ещё не подключена к демо-сервису.');
+      .toThrow('The demo form is not connected yet.');
     expect(resolvePublicLeadsUrl({
       configuredOrigin: 'https://demo-api.nvvai.site/',
       browserHostname: 'demo.nvvai.site',
@@ -85,7 +85,7 @@ describe('public lead intake API', () => {
       name: 'PublicLeadApiError',
       status: 400,
       code: 'invalid_human_verification',
-      message: 'Проверка безопасности истекла. Подтверди её ещё раз.',
+      message: 'Security verification expired. Please complete it again.',
     });
   });
 });
