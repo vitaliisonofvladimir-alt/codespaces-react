@@ -1,4 +1,4 @@
-import { createChatCompletion } from './openai.js';
+import { createOwnerChatCompletion } from './owner-ai.js';
 import { transcribeAudio } from './transcription.js';
 import { acceptsMarkdown, markdownResponse, publicMarkdown } from './public-markdown.js';
 import { catalogResponse, homepageLinks } from './api-catalog.js';
@@ -28,7 +28,7 @@ function addHomepageLinks(response, pathname) {
 }
 
 export function createWorker({
-  createChatCompletionImpl = createChatCompletion,
+  createChatCompletionImpl = createOwnerChatCompletion,
   transcribeAudioImpl = transcribeAudio,
   maxAudioSize = DEFAULT_MAX_AUDIO_SIZE,
 } = {}) {
@@ -58,12 +58,21 @@ export function createWorker({
         try {
           const { message } = await request.json();
           const reply = await createChatCompletionImpl(message, {
-            apiKey: env.OPENAI_API_KEY,
+            provider: env.AI_PROVIDER || 'azure',
+            azureKey: env.AZURE_AI_API_KEY,
+            azureEndpoint: env.AZURE_AI_ENDPOINT,
+            azureModel: env.AZURE_AI_MODEL,
+            vertexKey: env.VERTEX_AI_GATEWAY_KEY,
+            vertexEndpoint: env.VERTEX_AI_GATEWAY_URL,
+            vertexModel: env.VERTEX_AI_MODEL,
           });
 
           return jsonResponse({ reply });
         } catch (error) {
-          return jsonResponse({ error: error.message }, 500);
+          // Do not disclose provider internals, keys, or upstream error bodies.
+          const status = error.message === 'Message is required' ||
+            error.message === 'Message too long' ? 400 : 503;
+          return jsonResponse({ error: status === 400 ? error.message : 'AI assistant temporarily unavailable' }, status);
         }
       }
 
