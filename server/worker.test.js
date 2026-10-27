@@ -15,7 +15,7 @@ describe('Cloudflare Worker entry point', () => {
     expect(workerModule?.createWorker).toBeTypeOf('function');
   });
 
-  it('sends chat messages through OpenAI with the Worker secret', async () => {
+  it('sends chat messages through Azure AI with the Worker secret', async () => {
     const calls = [];
     const worker = createWorker({
       createChatCompletionImpl: async (message, options) => {
@@ -30,7 +30,8 @@ describe('Cloudflare Worker entry point', () => {
     });
 
     const response = await worker.fetch(request, {
-      OPENAI_API_KEY: 'test-key',
+      AZURE_AI_API_KEY: 'azure-test-key',
+      AZURE_AI_MODEL: 'gpt-4.1-mini',
     });
 
     expect(response.status).toBe(200);
@@ -40,7 +41,15 @@ describe('Cloudflare Worker entry point', () => {
     expect(calls).toEqual([
       {
         message: 'Hello',
-        options: { apiKey: 'test-key' },
+        options: {
+          provider: 'azure',
+          azureKey: 'azure-test-key',
+          azureEndpoint: undefined,
+          azureModel: 'gpt-4.1-mini',
+          vertexKey: undefined,
+          vertexEndpoint: undefined,
+          vertexModel: undefined,
+        },
       },
     ]);
   });
